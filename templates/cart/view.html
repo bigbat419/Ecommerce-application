@@ -1,0 +1,40 @@
+{% extends 'layout.html' %}
+{% block title %}Cart{% endblock %}
+
+{% block content %}
+<h2>Your Cart</h2>
+
+{% if items %}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Image</th>
+      <th>Price</th>
+      <th>Qty</th>
+      <th>Subtotal</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item_id, user_id, product_name, price, quantity, image in items %}
+    {{ item_id, user_id, product_name, price, quantity, image }}
+    {% endfor %}
+  </tbody>
+</table>
+
+<p class="fw-bold">Total: ${{ '%.2f'|format(total|float) }}</p>
+
+<form method="post" action="{{ url_for('checkout.cancel') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="btn btn-primary" type="submit">Checkout (Create PaymentIntent)</button>
+</form>
+<form method="post" action="{{ url_for('checkout.create_payment_intent') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+{% else %}
+<p>Cart empty. <a href="{{ url_for('products.list_products') }}">Browse products</a></p>
+{% endif %}
+
+{% endblock %}
