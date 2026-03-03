@@ -5,7 +5,7 @@
 <div class="row">
   <div class="col-md-6">
     {% if product.image %}
-      <img src="{{ url_for('static', uploads) }}" class="img-fluid">
+      <img src="{{ url_for('static', filename=product.image) }}" class="img-fluid">
     {% endif %}
   </div>
   <div class="col-md-6">
@@ -15,7 +15,7 @@
     <p>Stock: {{ product.stock }}</p>
 
     {% if current_user.is_authenticated %}
-    <form method="post" action="{{ url_for('cart.view_cart', product_id=product.id) }}">
+    <form method="post" action="{{ url_for('cart.cart_add', product_id=product.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="mb-3">
         <input class="form-control" name="quantity" type="number" value="1" min="1">

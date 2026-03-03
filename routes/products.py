@@ -2,24 +2,12 @@
 from flask import Blueprint, jsonify, render_template, request, url_for, redirect, flash
 from extensions import mysql
 from math import ceil
-from flask import Blueprint, request, jsonify
 
 products_bp = Blueprint("products", __name__, template_folder="../templates")
 
 # -------------------------
 # List products with search, category filter, and pagination
 # -------------------------
-
-product_bp = Blueprint("product", __name__)
-@product_bp.route("/products", methods=["POST"])
-def add_product():
-    data = request.json
-    (
-        "INSERT INTO products (name, price, image) VALUES (%s, %s, %s)",
-        (data["name"], data["price"], data["image"])
-    )
-    return jsonify({"message": "Product added"})
-
 @products_bp.route('/products')
 def list_products():
     q = request.args.get('q', '').strip()
@@ -95,6 +83,6 @@ def product_detail(product_id):
 
     if not product:
         flash('Product not found', 'warning')
-        return redirect(url_for('products/list.html'))
+        return redirect(url_for('products.list_products'))
 
     return render_template('products/detail.html', product=product)

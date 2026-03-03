@@ -18,8 +18,7 @@ def allowed_file(filename):
 @admin_bp.route("/dashboard")
 @login_required
 def dashboard():
-    
-    return render_template("admin/admin_dashboard.html")
+    return render_template("admin_dashboard.html")
 
 
 # ----------------------
@@ -32,7 +31,7 @@ def products():
     cur.execute("SELECT id, name, price, stock, category, created_at FROM products")
     products = cur.fetchall()
     cur.close()
-    return render_template("admin/products.html", products=products)
+    return render_template("products.html", products=products)
 
 
 @admin_bp.route("/products/add", methods=["GET", "POST"])
@@ -83,9 +82,9 @@ def add_product():
         cur.close()
 
         flash("Product added successfully!", "success")
-        return redirect(url_for("admin.products"))
+        return redirect(url_for("admin.dashboard"))
 
-    return render_template("admin/new_product.html")
+    return render_template("new_product.html")
 
 @admin_bp.route("/products/delete/<int:product_id>", methods=["POST"])
 @login_required
@@ -97,9 +96,6 @@ def delete_product(product_id):
 
     flash("Product deleted!", "info")
     return redirect(url_for("admin.products"))
-from flask import Blueprint, request, jsonify
-
-admin_bp = Blueprint("admin", __name__)
 
 
 # ----------------------
@@ -130,7 +126,7 @@ def orders():
     )
     orders = cur.fetchall()
     cur.close()
-    return render_template("account/orders.html", orders=orders)
+    return render_template("admin/orders.html", orders=orders)
 
 
 @admin_bp.route("/orders/update/<int:order_id>", methods=["POST"])
@@ -145,69 +141,3 @@ def update_order(order_id):
 
     flash("Order status updated!", "success")
     return redirect(url_for("admin.orders"))
-
-@admin_bp.route("/products/edit/<int:product_id>", methods=["GET", "POST"])
-@login_required
-def edit_product(product_id):
-    cur = mysql.connection.cursor()
-
-    # Get existing product
-    cur.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-    product = cur.fetchone()
-
-    if not product:
-        flash("Product not found", "danger")
-        return redirect(url_for("admin.products"))
-
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        price = request.form.get("price", "").strip()
-        stock = request.form.get("stock", "").strip()
-        category = request.form.get("category", "").strip()
-        description = request.form.get("description", "").strip()
-        image = request.files.get("image")
-
-        try:
-            price = float(price)
-            stock = int(stock)
-        except ValueError:
-            flash("Invalid price or stock", "danger")
-            return redirect(request.url)
-
-        image_path = product["image"]
-
-        
-        if image and allowed_file(image.filename):
-        
-            if image_path:
-                old_path = os.path.join(
-                    current_app.root_path, "static", image_path
-                )
-                if os.path.exists(old_path):
-                    os.remove(old_path)
-
-            filename = secure_filename(image.filename)
-            upload_folder = os.path.join(
-                current_app.root_path, "static/uploads"
-            )
-            os.makedirs(upload_folder, exist_ok=True)
-            image.save(os.path.join(upload_folder, filename))
-            image_path = f"uploads/{filename}"
-
-        cur.execute(
-            """
-            UPDATE products
-            SET name=%s, price=%s, stock=%s,
-                category=%s, description=%s, image=%s
-            WHERE id=%s
-            """,
-            (name, price, stock, category, description, image_path, product_id)
-        )
-        mysql.connection.commit()
-        cur.close()
-
-        flash("Product updated successfully", "success")
-        return redirect(url_for("admin.products"))
-
-    cur.close()
-    return render_template("admin/edit_product.html", product=product)

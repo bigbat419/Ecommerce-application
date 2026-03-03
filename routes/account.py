@@ -14,7 +14,7 @@ account_bp = Blueprint('account', __name__, url_prefix='/account', template_fold
 def addresses():
     cur = mysql.connection.cursor()
 
-    # Table creation should NOT happen in route handlers.
+    # ⚠️ Table creation should NOT happen in route handlers.
     # Better to use migrations or schema.sql.
     # I'm leaving it here since you wrote it, but recommend removing.
     cur.execute("""

@@ -2,9 +2,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import UserMixin, login_user, logout_user, login_required
 from extensions import mysql, login_manager
-from MySQLdb.cursors import DictCursor
+from MySQLdb.cursors import DictCursor # ✅ moved here correctly
 from utils import hash_password, verify_password
-from flask_login import current_user
 
 auth_bp = Blueprint("auth", __name__, template_folder="../templates")
 
@@ -17,8 +16,6 @@ class User(UserMixin):
         self.name = name
         self.email = email
         self.is_admin = is_admin
-        
-
 
 
 # -----------------------------
@@ -44,9 +41,7 @@ def register():
         name = request.form["name"]
         email = request.form["email"]
         password = request.form["password"]
-        role = request.form.get("role", "user")
-        role = role.lower() if isinstance(role, str) else "user"
-        is_admin = 1 if role == "admin" else 0
+
         cur = mysql.connection.cursor(DictCursor)
         cur.execute("SELECT id FROM users WHERE email=%s", (email,))
         if cur.fetchone():
@@ -56,8 +51,8 @@ def register():
 
         pw = hash_password(password)
         cur.execute(
-            "INSERT INTO users (name, email, password, role, is_admin) VALUES (%s, %s, %s, %s, %s)",
-            (name, email, pw, role, is_admin),
+            "INSERT INTO users (name, email, password) VALUES (%s, %s, %s)",
+            (name, email, pw),
         )
         mysql.connection.commit()
         cur.close()
@@ -73,7 +68,7 @@ def register():
 # -----------------------------
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":    
+    if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
 
@@ -89,13 +84,10 @@ def login():
             flash("Invalid credentials", "danger")
             return redirect(url_for("auth.login"))
 
-        user_obj = User(user["id"], user["name"], user["email"], bool(int(user["is_admin"])))
+        user_obj = User(user["id"], user["name"], user["email"], bool(user["is_admin"]))
         login_user(user_obj)
         flash("Logged in successfully", "success")
-        if int(user["is_admin"]) == 1:
-            return redirect(url_for("admin.dashboard"))
-        else:
-            return redirect(url_for("admin.products"))
+        return redirect(url_for('admin.dashboard'))
 
     return render_template("auth/login.html")
 

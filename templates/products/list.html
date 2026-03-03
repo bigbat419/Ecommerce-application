@@ -14,7 +14,7 @@
       {% endfor %}
     </select>
   </div>
-  <div class="col-auto"><button class="btn btn-secondary" type="submit">Search</button></div>
+  <div class="col-auto"><button class="btn btn-secondary" type="submit">Filter</button></div>
 </form>
 
 <div class="row">
@@ -34,13 +34,11 @@
           {{ (p.description or '')|truncate(100, True, '...') }}
         </p>
 
-        <p class="fw-bold">${{ '%.2f' % p.price }}</p>
+        <p class="fw-bold">${{ '%.2f'|format(p.price) }}</p>
         <a class="btn btn-sm btn-primary" href="{{ url_for('products.product_detail', product_id=p.id) }}">View</a>
       </div>
     </div>
   </div>
-  <h2>Products</h2>
-
 {% else %}
   <p class="text-center">No products found.</p>
 {% endfor %}
