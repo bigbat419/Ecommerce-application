@@ -37,6 +37,16 @@
   <button class="btn btn-primary" type="submit">Checkout (Create Payment Intent)</button>
 </form>
 
+  <div>
+    <form id="payment-form">
+      <div id="payment-element">
+        <!-- Stripe Elements will be inserted here -->
+      </div>
+      <button id="submit">Pay now zzzzzzzzzzzzzzzzzzzzzzzzzz</button>
+      <div id="error-message"></div>
+      </form>
+    </div>
+
 {% else %}
 <p>Cart empty. <a href="{{ url_for('products.list_products') }}">Browse products</a></p>
 {% endif %}

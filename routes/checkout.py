@@ -41,7 +41,7 @@ def checkout():
                     'quantity': 1,
                 }],
                 mode='payment',
-                success_url=url_for('checkout.success', _external=True),
+                success_url=url_for('checkout.load_stripe', _external=True),
                 cancel_url=url_for('checkout.cancel', _external=True)
             )
             return redirect(session.url, code=303)
