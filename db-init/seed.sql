@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS orders (
   user_id INT NOT NULL,
   total DECIMAL(10,2) NOT NULL,
   status VARCHAR(50) DEFAULT 'pending',
+  paystack_reference VARCHAR(100) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );

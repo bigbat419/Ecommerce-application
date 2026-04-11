@@ -17,4 +17,6 @@ class Config:
     STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
     STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
     STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+    PAYSTACK_SECRET_KEY = os.getenv('sk_live_cc48a67a57ec04aea9de6b158fd0c72cf01c26aa')
+    PAYSTACK_PUBLIC_KEY = os.getenv('pk_live_c794cc26aa19d4b39429f4675fd73ba557a28d1c')
     TESTING = False

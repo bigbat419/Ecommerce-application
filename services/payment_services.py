@@ -1,15 +1,38 @@
+import os
 import requests
-from config import PAYSTACK_SECRET
 
-def create_payment(email, amount):
-    url = "https://api.paystack.co/transaction/initialize"
+
+def initialize_transaction(email: str, amount_naira: float, callback_url: str = None) -> dict:
+    """Initialize a Paystack transaction. Amount in Naira (converted to kobo internally)."""
+    secret = os.getenv('PAYSTACK_SECRET_KEY', '')
     headers = {
-        "Authorization": f"Bearer {PAYSTACK_SECRET}",
-        "Content-Type": "application/json"
+        'Authorization': f'Bearer {secret}',
+        'Content-Type': 'application/json',
     }
-    data = {
-        "email": email,
-        "amount": amount * 100
+    payload = {
+        'email': email,
+        'amount': int(amount_naira * 100),
+        'currency': 'NGN',
     }
-    res = requests.post(url,json=data,headers=headers)
-    return res.json()
+    if callback_url:
+        payload['callback_url'] = callback_url
+
+    resp = requests.post(
+        'https://api.paystack.co/transaction/initialize',
+        json=payload,
+        headers=headers,
+        timeout=15,
+    )
+    return resp.json()
+
+
+def verify_transaction(reference: str) -> dict:
+    """Verify a Paystack transaction by reference."""
+    secret = os.getenv('PAYSTACK_SECRET_KEY', '')
+    headers = {'Authorization': f'Bearer {secret}'}
+    resp = requests.get(
+        f'https://api.paystack.co/transaction/verify/{reference}',
+        headers=headers,
+        timeout=15,
+    )
+    return resp.json()

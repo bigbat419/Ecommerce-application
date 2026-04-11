@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}Checkout{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <h4 class="mb-3">Order Summary</h4>
+    {% if items %}
+      <table class="table table-bordered mb-3">
+        <thead class="table-light">
+          <tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>₦{{ "%.2f"|format(item.price) }}</td>
+            <td>₦{{ "%.2f"|format(item.price * item.quantity) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold">
+            <td colspan="3" class="text-end">Total</td>
+            <td>₦{{ "%.2f"|format(total) }}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <form method="POST" action="{{ url_for('checkout.checkout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="total" value="{{ total }}">
+        <button type="submit" class="btn btn-primary w-100">
+          Pay ₦{{ "%.2f"|format(total) }} with Paystack
+        </button>
+      </form>
+    {% else %}
+      <div class="alert alert-info">Your cart is empty. <a href="{{ url_for('products.list_products') }}">Shop now</a></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
