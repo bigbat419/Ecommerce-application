@@ -1,0 +1,38 @@
+{% extends 'layout.html' %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<h2 class="mb-4">Users</h2>
+<div class="table-responsive">
+  <table class="table table-hover">
+    <thead class="table-light">
+      <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Admin</th><th>Joined</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.id }}</td>
+        <td>{{ u.name }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.role or 'user' }}</td>
+        <td>
+          <span class="badge bg-{{ 'success' if u.is_admin else 'secondary' }}">
+            {{ 'Yes' if u.is_admin else 'No' }}
+          </span>
+        </td>
+        <td>{{ u.created_at.strftime('%d %b %Y') if u.created_at else '' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin.toggle_admin', user_id=u.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-secondary" type="submit">
+              {{ 'Remove Admin' if u.is_admin else 'Make Admin' }}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-center text-muted">No users found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

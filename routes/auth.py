@@ -1,15 +1,12 @@
-# routes/auth.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import UserMixin, login_user, logout_user, login_required
+from flask_login import UserMixin, login_user, logout_user, login_required, current_user
 from extensions import mysql, login_manager
-from MySQLdb.cursors import DictCursor # ✅ moved here correctly
+from MySQLdb.cursors import DictCursor
 from utils import hash_password, verify_password
 
 auth_bp = Blueprint("auth", __name__, template_folder="../templates")
 
-# -----------------------------
-# User class
-# -----------------------------
+
 class User(UserMixin):
     def __init__(self, id, name, email, is_admin=False):
         self.id = id
@@ -18,9 +15,6 @@ class User(UserMixin):
         self.is_admin = is_admin
 
 
-# -----------------------------
-# Load user (Flask-Login)
-# -----------------------------
 @login_manager.user_loader
 def load_user(user_id):
     cur = mysql.connection.cursor(DictCursor)
@@ -32,69 +26,72 @@ def load_user(user_id):
     return User(row["id"], row["name"], row["email"], bool(row["is_admin"]))
 
 
-# -----------------------------
-# Register
-# -----------------------------
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("products.list_products"))
     if request.method == "POST":
-        name = request.form["name"]
-        email = request.form["email"]
-        password = request.form["password"]
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        if not name or not email or not password:
+            flash("All fields are required.", "warning")
+            return redirect(url_for("auth.register"))
 
         cur = mysql.connection.cursor(DictCursor)
         cur.execute("SELECT id FROM users WHERE email=%s", (email,))
         if cur.fetchone():
-            flash("Email already registered", "warning")
+            flash("Email already registered.", "warning")
             cur.close()
             return redirect(url_for("auth.register"))
 
         pw = hash_password(password)
         cur.execute(
-            "INSERT INTO users (name, email, password) VALUES (%s, %s, %s)",
+            "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, 'user')",
             (name, email, pw),
         )
         mysql.connection.commit()
         cur.close()
-
         flash("Account created. Please log in.", "success")
         return redirect(url_for("auth.login"))
 
     return render_template("auth/register.html")
 
 
-# -----------------------------
-# Login
-# -----------------------------
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("products.list_products"))
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
 
         cur = mysql.connection.cursor(DictCursor)
         cur.execute(
-            "SELECT id, name, email, password, is_admin FROM users WHERE email=%s",
-            (email,),
+            "SELECT id, name, email, password, is_admin FROM users WHERE email=%s", (email,)
         )
         user = cur.fetchone()
         cur.close()
 
         if not user or not verify_password(user["password"], password):
-            flash("Invalid credentials", "danger")
+            flash("Invalid email or password.", "danger")
             return redirect(url_for("auth.login"))
 
         user_obj = User(user["id"], user["name"], user["email"], bool(user["is_admin"]))
         login_user(user_obj)
-        flash("Logged in successfully", "success")
-        return redirect(url_for('admin.dashboard'))
+        flash(f"Welcome back, {user_obj.name}!", "success")
+
+        next_page = request.args.get("next")
+        if next_page:
+            return redirect(next_page)
+        if user_obj.is_admin:
+            return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("products.list_products"))
 
     return render_template("auth/login.html")
 
 
-# -----------------------------
-# Logout
-# -----------------------------
 @auth_bp.route("/logout")
 @login_required
 def logout():

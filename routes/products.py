@@ -8,7 +8,7 @@ products_bp = Blueprint("products", __name__, template_folder="../templates")
 # -------------------------
 # List products with search, category filter, and pagination
 # -------------------------
-@products_bp.route('/products')
+@products_bp.route('/')
 def list_products():
     q = request.args.get('q', '').strip()
     cat = request.args.get('category', '').strip()
@@ -74,7 +74,7 @@ def list_products():
 # -------------------------
 # Product detail
 # -------------------------
-@products_bp.route('/product/<int:product_id>')
+@products_bp.route('/<int:product_id>')
 def product_detail(product_id):
     cur = mysql.connection.cursor()
     cur.execute('SELECT * FROM products WHERE id=%s', (product_id,))

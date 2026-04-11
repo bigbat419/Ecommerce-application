@@ -10,7 +10,7 @@ checkout_bp = Blueprint('checkout', __name__, template_folder='../templates')
 
 
 def _paystack_headers():
-    secret = os.getenv('PAYSTACK_SECRET_KEY') or current_app.config.get('PAYSTACK_SECRET_KEY', '')
+    secret = current_app.config.get('PAYSTACK_SECRET_KEY', '')
     return {
         'Authorization': f'Bearer {secret}',
         'Content-Type': 'application/json',
@@ -20,7 +20,7 @@ def _paystack_headers():
 # ----------------------------------
 # Checkout page — initiates Paystack
 # ----------------------------------
-@checkout_bp.route('/checkout', methods=['GET', 'POST'])
+@checkout_bp.route('/', methods=['GET', 'POST'])
 @login_required
 def checkout():
     if request.method == 'POST':
@@ -71,14 +71,14 @@ def checkout():
         it['quantity'] = int(it['quantity'] or 0)
 
     total = sum(it['price'] * it['quantity'] for it in items)
-    public_key = os.getenv('PAYSTACK_PUBLIC_KEY') or current_app.config.get('PAYSTACK_PUBLIC_KEY', '')
+    public_key = current_app.config.get('PAYSTACK_PUBLIC_KEY', '')
     return render_template('checkout/checkout.html', items=items, total=total, public_key=public_key)
 
 
 # ----------------------------------
 # Paystack callback — verify payment
 # ----------------------------------
-@checkout_bp.route('/checkout/verify')
+@checkout_bp.route('/verify')
 @login_required
 def verify():
     reference = request.args.get('reference')
@@ -110,9 +110,9 @@ def verify():
 # ----------------------------------
 # Paystack webhook (server-to-server)
 # ----------------------------------
-@checkout_bp.route('/checkout/webhook', methods=['POST'])
+@checkout_bp.route('/webhook', methods=['POST'])
 def webhook():
-    secret = os.getenv('PAYSTACK_SECRET_KEY', '')
+    secret = current_app.config.get('PAYSTACK_SECRET_KEY', '')
     sig = request.headers.get('X-Paystack-Signature', '')
     computed = hmac.new(secret.encode(), request.data, hashlib.sha512).hexdigest()
 
@@ -132,13 +132,13 @@ def webhook():
 # ----------------------------------
 # Success / Cancel pages
 # ----------------------------------
-@checkout_bp.route('/checkout/success')
+@checkout_bp.route('/success')
 @login_required
 def success():
     return render_template('checkout/success.html')
 
 
-@checkout_bp.route('/checkout/cancel')
+@checkout_bp.route('/cancel')
 @login_required
 def cancel():
     return render_template('checkout/cancel.html')
