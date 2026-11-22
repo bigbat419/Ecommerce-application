@@ -1,0 +1,104 @@
+{% extends 'layout.html' %}
+{% block title %}Help & Support{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Help & Support</h1>
+    <ol class="breadcrumb mt-1"><li><a href="{{ url_for('index') }}">Home</a></li><li>Help & Support</li></ol>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  {# Search bar #}
+  <div class="text-center mb-5">
+    <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:700;color:var(--dark);margin-bottom:.5rem;">We are here to help you.</div>
+    <p class="text-muted fs-sm mb-3">Search our knowledge base or browse topics below.</p>
+    <form class="d-flex justify-content-center gap-2" onsubmit="return false;" style="max-width:480px;margin:0 auto;">
+      <input class="form-input" type="text" placeholder="Search help articles…" style="flex:1;">
+      <button class="btn-p"><i class="bi bi-search"></i></button>
+    </form>
+  </div>
+
+  {# Category cards #}
+  <div class="row g-3 mb-5">
+    {% for icon, title, desc, color in [
+      ('bi-question-circle','FAQs','Answers to the most common questions','#2B4EFF'),
+      ('bi-headset','Contact Us','Chat, email or call our support team','#22C55E'),
+      ('bi-lightning','Live Chat','Get instant help from our agents','#F59E0B'),
+      ('bi-arrow-counterclockwise','Returns & Refunds','How to return or exchange an item','#EF4444'),
+      ('bi-truck','Shipping Info','Delivery times, fees and tracking','#8B5CF6'),
+      ('bi-credit-card','Payments','Payment methods and billing help','#0EA5E9'),
+    ] %}
+    <div class="col-6 col-md-4 col-lg-2">
+      <a href="#" class="cat-card text-center" style="text-decoration:none;">
+        <div class="cat-card-icon" style="background:{{ color }}15;color:{{ color }};"><i class="bi {{ icon }}"></i></div>
+        <div class="cat-card-name">{{ title }}</div>
+        <div class="fs-xs text-muted mt-1">{{ desc }}</div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# Popular articles #}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-file-text me-2 text-p"></i>Popular Articles</div>
+        <div class="card-body">
+          {% set articles = [
+            ('How do I track my order?', 'Learn how to track your Flamingos order in real time.'),
+            ('What is your return policy?', 'We offer hassle-free 30-day returns on all items.'),
+            ('How do I cancel my order?', 'Orders can be cancelled within 1 hour of placement.'),
+            ('What payment methods are accepted?', 'We accept Visa, Mastercard, Bank Transfer, USSD and more.'),
+            ('How long does delivery take?', 'Standard delivery takes 2-5 business days within Nigeria.'),
+            ('Can I change my delivery address?', 'You can update your address before your order is shipped.'),
+          ] %}
+          {% for title, desc in articles %}
+          <div class="d-flex align-items-start gap-3 pb-3 mb-3" style="{{ 'border-bottom:1px solid var(--grey-200);' if not loop.last }}">
+            <div style="width:32px;height:32px;border-radius:6px;background:var(--p-pale);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--p);font-size:.85rem;"><i class="bi bi-file-earmark-text"></i></div>
+            <div>
+              <div class="fw-600 fs-sm"><a href="#" class="text-dark" style="text-decoration:none;">{{ title }}</a></div>
+              <div class="fs-xs text-muted mt-1">{{ desc }}</div>
+            </div>
+            <i class="bi bi-chevron-right text-muted ms-auto fs-xs flex-shrink-0 mt-1"></i>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-headset me-2 text-p"></i>Contact Support</div>
+        <div class="card-body">
+          {% for icon, label, val in [
+            ('bi-telephone','Phone','+234 801 234 5678'),
+            ('bi-envelope','Email','support@flamingos.com'),
+            ('bi-geo-alt','Address','Lagos, Nigeria'),
+          ] %}
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--p-pale);display:flex;align-items:center;justify-content:center;color:var(--p);flex-shrink:0;"><i class="bi {{ icon }}"></i></div>
+            <div>
+              <div class="fs-xs text-muted">{{ label }}</div>
+              <div class="fw-600 fs-sm">{{ val }}</div>
+            </div>
+          </div>
+          {% endfor %}
+          <a href="{{ url_for('static_pages.contact') }}" class="btn-p btn-full btn-sm mt-1">Contact Us</a>
+        </div>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,var(--p),var(--p-dark));border:none;">
+        <div class="card-body text-center" style="color:#fff;">
+          <i class="bi bi-chat-dots" style="font-size:2rem;margin-bottom:.8rem;display:block;"></i>
+          <div class="fw-700 mb-1">Live Chat</div>
+          <div style="font-size:.82rem;color:rgba(255,255,255,.75);margin-bottom:1rem;">Available Mon–Sat, 8am–8pm</div>
+          <button class="btn-white btn-sm btn-full" onclick="return false;">Start Live Chat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

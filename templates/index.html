@@ -1,9 +1,199 @@
 {% extends 'layout.html' %}
-{% block title %}MyShop — Home{% endblock %}
-{% block content %}
-<div class="py-5 text-center">
-  <h1 class="display-5 fw-bold">Welcome to MyShop</h1>
-  <p class="lead text-muted">Discover great products at great prices.</p>
-  <a href="{{ url_for('products.list_products') }}" class="btn btn-primary btn-lg">Shop Now</a>
+{% block title %}Home{% endblock %}
+
+{% block full_content %}
+
+{# ═══ HERO ════════════════════════════════════════════════════ #}
+<section class="hero">
+  <div class="container position-relative" style="z-index:2;">
+    <div class="row align-items-center" style="min-height:340px;">
+      <div class="col-lg-6 py-4">
+        <span class="hero-eyebrow">New Season 2026</span>
+        <h1>Discover <span>Amazing</span><br>Deals</h1>
+        <p>Shop the best products at unbeatable prices.<br>Free shipping on orders over ₦25,000.</p>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="{{ url_for('products.list_products') }}" class="btn-white btn-lg">
+            <i class="bi bi-bag me-1"></i>Shop Now
+          </a>
+          <a href="{{ url_for('products.list_products', sort='sale') }}" class="btn-outline btn-lg" style="color:#fff;border-color:rgba(255,255,255,.5);">
+            View Deals
+          </a>
+        </div>
+        <div class="hero-stats">
+          <div><div class="hero-stat-val">10K+</div><div class="hero-stat-lbl">Happy Customers</div></div>
+          <div><div class="hero-stat-val">500+</div><div class="hero-stat-lbl">Products</div></div>
+          <div><div class="hero-stat-val">4.9★</div><div class="hero-stat-lbl">Avg Rating</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {# decorative hero image placeholder — replace with real product image #}
+  <div class="hero-img-wrap d-none d-lg-flex" style="pointer-events:none;">
+    <div style="font-size:9rem;opacity:.15;user-select:none;">🛍️</div>
+  </div>
+</section>
+
+{# ═══ TRUST STRIP ═════════════════════════════════════════════ #}
+<div class="trust-strip">
+  <div class="container">
+    <div class="row g-0">
+      {% for icon, title, sub in [
+        ('bi-truck','Free Shipping','On orders over ₦25,000'),
+        ('bi-arrow-counterclockwise','Easy Returns','30-day return policy'),
+        ('bi-shield-check','Secure Payment','100% protected'),
+        ('bi-headset','24/7 Support','Always here for you'),
+      ] %}
+      <div class="col-6 col-md-3">
+        <div class="trust-item">
+          <div class="trust-item-icon"><i class="bi {{ icon }}"></i></div>
+          <div>
+            <div class="trust-item-title">{{ title }}</div>
+            <div class="trust-item-sub">{{ sub }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 </div>
+
+{# ═══ TOP CATEGORIES ══════════════════════════════════════════ #}
+<section class="py-4" style="background:#fff;">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">Browse</div>
+        <h2>Top Categories</h2>
+      </div>
+      <a href="{{ url_for('products.list_products') }}">View All <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="row row-cols-3 row-cols-sm-4 row-cols-md-6 g-2">
+      {% for icon, label, cat in [
+        ('bi-phone','Electronics','Electronics'),
+        ('bi-bag','Fashion','Women'),
+        ('bi-house','Home & Living','Home'),
+        ('bi-gem','Beauty','Beauty'),
+        ('bi-trophy','Sports','Sports'),
+        ('bi-grid','More',''),
+      ] %}
+      <div class="col">
+        <a href="{{ url_for('products.list_products', category=cat) }}" class="cat-card">
+          <div class="cat-card-icon"><i class="bi {{ icon }}"></i></div>
+          <div class="cat-card-name">{{ label }}</div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ═══ HOT DEALS ═══════════════════════════════════════════════ #}
+<section class="py-4" style="background:var(--grey-100);">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">Limited Time</div>
+        <h2>🔥 Hot Deals</h2>
+      </div>
+      <a href="{{ url_for('products.list_products', sort='sale') }}">View All <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    {% if featured_products %}
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3">
+      {% for p in featured_products %}
+      <div class="col">
+        <div class="pcard h-100">
+          <div class="pcard-img">
+            {% if p.image %}
+              <img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}" loading="lazy">
+            {% else %}
+              <div class="pcard-img-placeholder"><i class="bi bi-image"></i></div>
+            {% endif %}
+
+            {% if loop.index <= 2 %}<span class="pcard-badge sale">SALE</span>{% elif loop.index <= 4 %}<span class="pcard-badge new">NEW</span>{% endif %}
+
+            {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('wishlist.toggle_wishlist', product_id=p.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="pcard-wish" title="Wishlist"><i class="bi bi-heart"></i></button>
+            </form>
+            {% endif %}
+          </div>
+          <div class="pcard-body">
+            {% if p.category %}<div class="pcard-cat">{{ p.category }}</div>{% endif %}
+            <div class="pcard-name">
+              <a href="{{ url_for('products.product_detail', product_id=p.id) }}" class="text-dark" style="text-decoration:none;">{{ p.name }}</a>
+            </div>
+            <div class="d-flex align-items-center mt-1 mb-1">
+              <span class="pcard-stars">★★★★★</span>
+              <span class="pcard-reviews">({{ (loop.index * 17 + 23) }})</span>
+            </div>
+            <div>
+              <span class="pcard-price">₦{{ "%.0f"|format(p.price|float) }}</span>
+            </div>
+            {% if current_user.is_authenticated and p.stock > 0 %}
+            <form method="post" action="{{ url_for('cart.cart_add', product_id=p.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="quantity" value="1">
+              <button type="submit" class="pcard-add">
+                <i class="bi bi-bag-plus"></i> Add to Cart
+              </button>
+            </form>
+            {% elif p.stock == 0 %}
+            <button class="pcard-add" disabled>Out of Stock</button>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="pcard-add btn-sm text-white" style="text-decoration:none;">Login to Buy</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+      <i class="bi bi-box-seam text-muted" style="font-size:3rem;"></i>
+      <p class="text-muted mt-3 fs-sm">No products yet.</p>
+      {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for('admin.add_product') }}" class="btn-p">Add First Product</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ═══ PROMO BANNER ════════════════════════════════════════════ #}
+<section class="py-4" style="background:#fff;">
+  <div class="container">
+    <div style="background:linear-gradient(135deg,var(--p) 0%,var(--p-dark) 100%);border-radius:var(--radius);padding:2.5rem;position:relative;overflow:hidden;">
+      <div style="position:absolute;right:-20px;top:-20px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06);"></div>
+      <div style="position:absolute;right:60px;bottom:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04);"></div>
+      <div class="row align-items-center" style="position:relative;z-index:2;">
+        <div class="col-md-7">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:.5rem;">Limited Offer</div>
+          <h3 style="font-family:var(--font-d);font-size:clamp(1.4rem,3vw,2rem);font-weight:700;color:#fff;margin-bottom:.5rem;">Up to 40% Off<br>Seasonal Collection</h3>
+          <p style="color:rgba(255,255,255,.75);font-size:.9rem;max-width:380px;margin-bottom:1.2rem;">Use code <strong style="color:#FFD166;">FLAMINGO10</strong> for an extra 10% off your first order.</p>
+          <a href="{{ url_for('products.list_products', sort='sale') }}" class="btn-white">
+            Shop the Sale <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ═══ NEWSLETTER ══════════════════════════════════════════════ #}
+<section class="py-4" style="background:var(--grey-100);border-top:1px solid var(--grey-200);">
+  <div class="container text-center">
+    <div class="section-eyebrow text-center">Stay Updated</div>
+    <h2 style="font-family:var(--font-d);font-size:1.4rem;font-weight:700;color:var(--dark);margin-bottom:.4rem;">Get Latest Deals in Your Inbox</h2>
+    <p class="text-muted fs-sm mb-3">Subscribe to get exclusive offers and new arrivals directly to your inbox.</p>
+    <form class="d-flex gap-2 justify-content-center flex-wrap" onsubmit="return false;">
+      <input type="email" class="form-input" placeholder="Enter your email" style="max-width:300px;">
+      <button class="btn-p">Subscribe Now</button>
+    </form>
+    <p class="fs-xs text-muted mt-2">No spam. Unsubscribe anytime.</p>
+  </div>
+</section>
+
+<main>{% block content %}{% endblock %}</main>
 {% endblock %}

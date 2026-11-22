@@ -1,0 +1,102 @@
+{% extends 'admin/layout_admin.html' %}
+{% block title %}Categories{% endblock %}
+{% block page_title %}Categories & Catalogue Structure{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0" style="font-family:var(--font-d);font-size:1.5rem;color:var(--dark);">Categories</h2>
+    <p class="text-muted fs-sm mb-0">{{ categories|length }} category{% if categories|length != 1 %}ies{% endif %}</p>
+  </div>
+  <button class="btn-p" onclick="document.getElementById('addCatModal').style.display='flex'">
+    <i class="bi bi-plus-circle me-1"></i>New Category
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-body-flush">
+    <table class="flm-table">
+      <thead><tr><th>Name</th><th>Slug</th><th>Parent</th><th>Sort</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for c in categories %}
+        <tr>
+          <td class="fw-600 fs-sm">{{ c.name }}</td>
+          <td class="fs-xs text-muted font-monospace">{{ c.slug }}</td>
+          <td class="fs-sm text-muted">{{ c.parent_name or '—' }}</td>
+          <td class="fs-sm">{{ c.sort_order }}</td>
+          <td><span class="badge {{ 'badge-success' if c.active else 'badge-grey' }}">{{ 'Active' if c.active else 'Hidden' }}</span></td>
+          <td>
+            <div class="d-flex gap-1">
+              <button class="btn-p btn-sm" onclick="editCat({{ c.id }}, '{{ c.name }}', '{{ c.sort_order }}', {{ c.active }})">Edit</button>
+              <form method="post" action="{{ url_for('admin.delete_category', cat_id=c.id) }}" onsubmit="return confirm('Delete category?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-outline btn-sm" style="border-color:var(--danger);color:var(--danger);"><i class="bi bi-trash3"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No categories yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Modal #}
+<div id="addCatModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center;">
+  <div class="card" style="width:100%;max-width:480px;margin:1rem;">
+    <div class="card-header">
+      <span id="catModalTitle">New Category</span>
+      <button onclick="document.getElementById('addCatModal').style.display='none'" class="border-0 bg-transparent fs-4 text-muted" style="line-height:1;">&times;</button>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('admin.save_category') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" id="catId">
+        <div class="mb-3">
+          <label class="form-label-sm">Name <span class="text-danger">*</span></label>
+          <input class="form-input" type="text" name="name" id="catName" required>
+        </div>
+        <div class="form-row form-row-2">
+          <div>
+            <label class="form-label-sm">Parent Category</label>
+            <select class="form-input" name="parent_id">
+              <option value="">None (top-level)</option>
+              {% for c in categories %}
+              <option value="{{ c.id }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label-sm">Sort Order</label>
+            <input class="form-input" type="number" name="sort_order" id="catSort" value="0" min="0">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label-sm">Description</label>
+          <textarea class="form-input" name="description" rows="2"></textarea>
+        </div>
+        <label style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;cursor:pointer;margin-bottom:1rem;">
+          <input type="checkbox" name="active" id="catActive" checked style="accent-color:var(--p);"> Active
+        </label>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn-p">Save Category</button>
+          <button type="button" class="btn-outline" onclick="document.getElementById('addCatModal').style.display='none'">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function editCat(id, name, sort, active) {
+  document.getElementById('catId').value = id;
+  document.getElementById('catName').value = name;
+  document.getElementById('catSort').value = sort;
+  document.getElementById('catActive').checked = !!active;
+  document.getElementById('catModalTitle').textContent = 'Edit Category';
+  document.getElementById('addCatModal').style.display = 'flex';
+}
+</script>
+{% endblock %}

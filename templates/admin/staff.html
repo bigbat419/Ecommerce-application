@@ -1,0 +1,127 @@
+{% extends 'admin/layout_admin.html' %}
+{% block title %}Staff & Permissions{% endblock %}
+{% block page_title %}Staff & Permissions{% endblock %}
+{% block content %}
+
+<div class="row g-4">
+
+  {# Staff members #}
+  <div class="col-lg-8">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+      <h2 class="mb-0" style="font-family:var(--font-d);font-size:1.3rem;color:var(--dark);">Staff Members</h2>
+    </div>
+    <div class="card">
+      <div class="card-body-flush">
+        <table class="flm-table">
+          <thead><tr><th>User</th><th>Email</th><th>Admin</th><th>Role</th><th>Assign Role</th></tr></thead>
+          <tbody>
+            {% for m in staff_members %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div style="width:34px;height:34px;border-radius:50%;background:{% if m.is_admin %}var(--p){% else %}var(--grey-200){% endif %};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:{% if m.is_admin %}#fff{% else %}var(--muted){% endif %};flex-shrink:0;">
+                    {{ m.name[0].upper() }}
+                  </div>
+                  <span class="fw-600 fs-sm">{{ m.name }}</span>
+                </div>
+              </td>
+              <td class="fs-xs text-muted">{{ m.email }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin.toggle_admin', user_id=m.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="badge border-0 {{ 'badge-primary' if m.is_admin else 'badge-grey' }}"
+                          style="cursor:pointer;" title="Toggle admin">
+                    {{ 'Admin' if m.is_admin else 'User' }}
+                  </button>
+                </form>
+              </td>
+              <td>
+                <span class="badge badge-info">{{ m.role_name or 'No Role' }}</span>
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('admin.assign_role', user_id=m.id) }}" class="d-flex gap-1">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <select name="role_id" class="form-select form-select-sm" style="font-size:.78rem;max-width:140px;">
+                    <option value="">No Role</option>
+                    {% for r in roles %}
+                    <option value="{{ r.id }}" {{ 'selected' if m.role_name == r.name }}>{{ r.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="btn-p btn-sm"><i class="bi bi-check2"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No staff members.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# Roles #}
+  <div class="col-lg-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="mb-0" style="font-family:var(--font-d);font-size:1.3rem;color:var(--dark);">Roles</h2>
+      <button class="btn-p btn-sm" onclick="document.getElementById('roleModal').style.display='flex'">
+        <i class="bi bi-plus me-1"></i>New Role
+      </button>
+    </div>
+    <div class="card">
+      <div class="card-body-flush">
+        {% for r in roles %}
+        <div class="d-flex align-items-start gap-3 p-3 {{ '' if loop.last else 'border-bottom' }}">
+          <div style="width:34px;height:34px;border-radius:8px;background:var(--p-pale);display:flex;align-items:center;justify-content:center;color:var(--p);flex-shrink:0;"><i class="bi bi-shield-check"></i></div>
+          <div class="flex-grow-1">
+            <div class="fw-700 fs-sm">{{ r.name }}</div>
+            {% if r.permissions %}
+            <div class="fs-xs text-muted mt-1 font-monospace">{{ r.permissions }}</div>
+            {% endif %}
+          </div>
+          <form method="post" action="{{ url_for('admin.delete_role', role_id=r.id) }}" onsubmit="return confirm('Delete role?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="border-0 bg-transparent text-muted" title="Delete role" style="font-size:.85rem;cursor:pointer;"><i class="bi bi-trash3"></i></button>
+          </form>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted fs-sm">No roles defined.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# New role modal #}
+<div id="roleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center;">
+  <div class="card" style="width:100%;max-width:440px;margin:1rem;">
+    <div class="card-header">
+      New Role
+      <button onclick="document.getElementById('roleModal').style.display='none'" class="border-0 bg-transparent fs-4 text-muted" style="line-height:1;">&times;</button>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('admin.save_role') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id">
+        <div class="mb-3">
+          <label class="form-label-sm">Role Name <span class="text-danger">*</span></label>
+          <input class="form-input" type="text" name="name" required placeholder="e.g. Support Agent">
+        </div>
+        <div class="mb-4">
+          <label class="form-label-sm">Permissions (JSON array or comma list)</label>
+          <textarea class="form-input" name="permissions" rows="3" placeholder='["orders","customers","returns"]'></textarea>
+          <div class="fs-xs text-muted mt-1">
+            Available: products, orders, users, reviews, coupons, reports, shipping, returns, categories, brands, settings
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn-p">Create Role</button>
+          <button type="button" class="btn-outline" onclick="document.getElementById('roleModal').style.display='none'">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,42 +1,179 @@
-{% extends "layout.html" %}
+{% extends 'layout.html' %}
 {% block title %}Checkout{% endblock %}
-{% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-7">
-    <h4 class="mb-3">Order Summary</h4>
-    {% if items %}
-      <table class="table table-bordered mb-3">
-        <thead class="table-light">
-          <tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
-        </thead>
-        <tbody>
-          {% for item in items %}
-          <tr>
-            <td>{{ item.name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>₦{{ "%.2f"|format(item.price) }}</td>
-            <td>₦{{ "%.2f"|format(item.price * item.quantity) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-        <tfoot>
-          <tr class="fw-bold">
-            <td colspan="3" class="text-end">Total</td>
-            <td>₦{{ "%.2f"|format(total) }}</td>
-          </tr>
-        </tfoot>
-      </table>
 
-      <form method="POST" action="{{ url_for('checkout.checkout') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="total" value="{{ total }}">
-        <button type="submit" class="btn btn-primary w-100">
-          Pay ₦{{ "%.2f"|format(total) }} with Paystack
-        </button>
-      </form>
-    {% else %}
-      <div class="alert alert-info">Your cart is empty. <a href="{{ url_for('products.list_products') }}">Shop now</a></div>
-    {% endif %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Checkout</h1>
+    <ol class="breadcrumb mt-1">
+      <li><a href="{{ url_for('index') }}">Home</a></li>
+      <li><a href="{{ url_for('cart.view_cart') }}">Cart</a></li>
+      <li>Checkout</li>
+    </ol>
   </div>
 </div>
+
+<div class="container pb-5">
+  {# 3-step progress (wireframe screen 5) #}
+  <div class="steps mb-4" style="max-width:420px;">
+    <div class="step done">
+      <div class="step-circle"><i class="bi bi-check"></i></div>
+      <div class="step-label">Cart</div>
+    </div>
+    <div class="step active">
+      <div class="step-circle">1</div>
+      <div class="step-label">Shipping</div>
+    </div>
+    <div class="step">
+      <div class="step-circle">2</div>
+      <div class="step-label">Payment</div>
+    </div>
+    <div class="step">
+      <div class="step-circle">3</div>
+      <div class="step-label">Review</div>
+    </div>
+  </div>
+
+  {% if items %}
+  <div class="row g-4">
+
+    {# ── Shipping info (wireframe screen 5) ───────────────────── #}
+    <div class="col-lg-7">
+
+      {# Shipping info card #}
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-geo-alt me-2 text-p"></i>Shipping Information</div>
+        <div class="card-body">
+          <div class="form-row form-row-2">
+            <div>
+              <label class="form-label-sm">Full Name <span class="text-danger">*</span></label>
+              <input class="form-input" type="text" value="{{ current_user.name }}" readonly>
+            </div>
+            <div>
+              <label class="form-label-sm">Email</label>
+              <input class="form-input" type="email" value="{{ current_user.email }}" readonly>
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label class="form-label-sm">Phone Number <span class="text-danger">*</span></label>
+              <input class="form-input" type="tel" placeholder="+234 801 234 5678">
+            </div>
+          </div>
+          {% if addresses %}
+          <div class="form-row">
+            <div>
+              <label class="form-label-sm">Delivery Address</label>
+              <select class="form-input">
+                {% for a in addresses %}
+                <option>{{ a.label }}: {{ a.line1 }}, {{ a.city }}, {{ a.country }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          {% else %}
+          <div class="form-row form-row-2">
+            <div>
+              <label class="form-label-sm">Address <span class="text-danger">*</span></label>
+              <input class="form-input" type="text" placeholder="123 Main Street">
+            </div>
+            <div>
+              <label class="form-label-sm">City <span class="text-danger">*</span></label>
+              <input class="form-input" type="text" placeholder="Lagos">
+            </div>
+          </div>
+          <div class="form-row form-row-2">
+            <div>
+              <label class="form-label-sm">State <span class="text-danger">*</span></label>
+              <input class="form-input" type="text" placeholder="Lagos">
+            </div>
+            <div>
+              <label class="form-label-sm">Country</label>
+              <input class="form-input" type="text" value="Nigeria" readonly>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--dark-2);cursor:pointer;margin-top:.5rem;">
+            <input type="checkbox" style="accent-color:var(--p);">
+            Use this address for billing
+          </label>
+          <div class="mt-2 fs-xs text-muted">
+            <a href="{{ url_for('account.addresses') }}" class="text-p fw-600">+ Save a delivery address</a> for faster checkout next time.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Order items summary #}
+      <div class="card">
+        <div class="card-header"><i class="bi bi-receipt me-2 text-p"></i>Order Items</div>
+        <div class="card-body-flush">
+          <table class="flm-table">
+            <thead><tr><th>Product</th><th class="text-center">Qty</th><th class="text-end">Price</th><th class="text-end">Subtotal</th></tr></thead>
+            <tbody>
+              {% for item in items %}
+              <tr>
+                <td class="fw-600 fs-sm">{{ item.name }}</td>
+                <td class="text-center">{{ item.quantity }}</td>
+                <td class="text-end">₦{{ "%.0f"|format(item.price|float) }}</td>
+                <td class="text-end fw-700">₦{{ "%.0f"|format(item.price|float * item.quantity|int) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# ── Payment summary + pay button ─────────────────────────── #}
+    <div class="col-lg-5">
+      <div class="summary-panel">
+        <div class="fw-700 mb-3" style="font-size:1rem;color:var(--dark);">Payment Summary</div>
+
+        <div class="summary-row"><span class="text-muted">Items total</span><span class="fw-600">₦{{ "%.0f"|format(total) }}</span></div>
+        <div class="summary-row">
+          <span class="text-muted">Shipping</span>
+          <span class="fw-600 {{ 'text-success' if total>=25000 else '' }}">{{ 'Free' if total>=25000 else '₦1,500' }}</span>
+        </div>
+        <div class="summary-total">
+          <span>Total</span>
+          <span class="text-p" style="font-size:1.2rem;font-weight:800;">₦{{ "%.0f"|format(total if total>=25000 else total+1500) }}</span>
+        </div>
+
+        <form method="POST" action="{{ url_for('checkout.checkout') }}" id="payForm" class="mt-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="total" value="{{ total if total>=25000 else total+1500 }}">
+          <button type="submit" class="btn-p btn-full btn-lg" id="payBtn">
+            <i class="bi bi-lock me-2"></i>Continue to Payment →
+          </button>
+        </form>
+
+        <div class="d-flex align-items-center justify-content-center gap-2 mt-3 fs-xs text-muted">
+          <i class="bi bi-shield-check text-p"></i>Secured by Paystack
+        </div>
+        <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
+          {% for lbl in ['Visa','Mastercard','Bank Transfer','USSD'] %}
+          <span class="badge badge-grey">{{ lbl }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+  {% else %}
+  <div class="success-page">
+    <div style="font-size:3rem;margin-bottom:1rem;">🛒</div>
+    <h2>Nothing to checkout</h2>
+    <p class="text-muted fs-sm mb-4">Your cart is empty.</p>
+    <a href="{{ url_for('products.list_products') }}" class="btn-p btn-lg">Shop Now</a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.getElementById('payForm')?.addEventListener('submit', function(){
+  const btn=document.getElementById('payBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Redirecting to Paystack…';
+});
+</script>
 {% endblock %}

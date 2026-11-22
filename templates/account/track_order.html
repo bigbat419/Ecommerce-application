@@ -1,0 +1,106 @@
+{% extends 'layout.html' %}
+{% block title %}Track Order #{{ order.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Track Order</h1>
+    <ol class="breadcrumb mt-1">
+      <li><a href="{{ url_for('index') }}">Home</a></li>
+      <li><a href="{{ url_for('account.orders') }}">Orders</a></li>
+      <li>#ORD{{ '%06d'|format(order.id) }}</li>
+    </ol>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="d-flex gap-4 align-items-start flex-column flex-lg-row">
+    {% include 'account/_sidebar.html' %}
+    <div class="flex-grow-1">
+
+      {# Order summary strip #}
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <div class="fs-xs text-muted fw-600 text-uppercase mb-1">Order ID</div>
+              <div class="fw-700 text-p">#ORD{{ '%06d'|format(order.id) }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="fs-xs text-muted fw-600 text-uppercase mb-1">Order Date</div>
+              <div class="fw-600 fs-sm">{{ order.created_at.strftime('%d %b %Y') if order.created_at else '—' }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="fs-xs text-muted fw-600 text-uppercase mb-1">Status</div>
+              <span class="badge {{ 'badge-success' if order.status=='paid' or order.status=='delivered' else 'badge-info' if order.status=='shipped' else 'badge-warning' if order.status=='pending' else 'badge-grey' }}">
+                {{ order.status|capitalize }}
+              </span>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="fs-xs text-muted fw-600 text-uppercase mb-1">Tracking #</div>
+              <div class="fw-600 fs-sm font-monospace">{{ order.tracking_number or 'FLM-' ~ '%08d'|format(order.id * 1234 % 99999999) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Timeline #}
+      <div class="card">
+        <div class="card-header"><i class="bi bi-geo-alt me-2 text-p"></i>Shipment Timeline</div>
+        <div class="card-body">
+          <div style="position:relative;padding-left:2.5rem;">
+            {# Vertical line #}
+            <div style="position:absolute;left:11px;top:12px;bottom:12px;width:2px;background:var(--grey-200);"></div>
+
+            {% for event in tracking_events %}
+            {% set is_last = loop.last %}
+            <div style="position:relative;margin-bottom:{{ '0' if is_last else '1.75rem' }};">
+              {# Dot #}
+              <div style="position:absolute;left:-2.5rem;top:3px;width:24px;height:24px;border-radius:50%;
+                          background:{{ 'var(--p)' if is_last else '#fff' }};
+                          border:2px solid {{ 'var(--p)' if is_last else 'var(--grey-300)' }};
+                          display:flex;align-items:center;justify-content:center;">
+                {% if is_last %}
+                  <i class="bi bi-check" style="color:#fff;font-size:.65rem;"></i>
+                {% endif %}
+              </div>
+              <div>
+                <div class="fw-700 fs-sm" style="color:{{ 'var(--p)' if is_last else 'var(--dark)' }};">
+                  {{ event.status }}
+                </div>
+                {% if event.note %}
+                  <div class="text-muted fs-xs mt-1">{{ event.note }}</div>
+                {% endif %}
+                <div class="d-flex align-items-center gap-3 mt-1">
+                  {% if event.location %}
+                    <span class="fs-xs text-muted"><i class="bi bi-geo-alt me-1"></i>{{ event.location }}</span>
+                  {% endif %}
+                  <span class="fs-xs text-muted">
+                    <i class="bi bi-clock me-1"></i>
+                    {{ event.created_at.strftime('%d %b %Y, %H:%M') if event.created_at and event.created_at is not string else event.created_at or '—' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 d-flex gap-3 flex-wrap">
+        <a href="{{ url_for('account.order_detail', order_id=order.id) }}" class="btn-outline btn-sm">
+          <i class="bi bi-arrow-left me-1"></i>Order Details
+        </a>
+        {% if order.status == 'paid' %}
+        <a href="{{ url_for('account.request_return', order_id=order.id) }}" class="btn-outline btn-sm">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Request Return
+        </a>
+        {% endif %}
+        <a href="{{ url_for('static_pages.contact') }}" class="btn-p btn-sm ms-auto">
+          <i class="bi bi-headset me-1"></i>Need Help?
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -9,7 +9,30 @@ account_bp = Blueprint("account", __name__, url_prefix="/account", template_fold
 @account_bp.route("/")
 @login_required
 def profile():
-    return render_template("account/profile.html", user=current_user)
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT COUNT(*) AS cnt FROM orders WHERE user_id=%s", (current_user.id,))
+    order_count = cur.fetchone()['cnt']
+    cur.execute("SELECT COUNT(*) AS cnt FROM wishlist WHERE user_id=%s", (current_user.id,))
+    wishlist_count = cur.fetchone()['cnt']
+    cur.execute("SELECT COUNT(*) AS cnt FROM addresses WHERE user_id=%s", (current_user.id,))
+    address_count = cur.fetchone()['cnt']
+    cur.execute("SELECT COUNT(*) AS cnt FROM reviews WHERE user_id=%s", (current_user.id,))
+    review_count = cur.fetchone()['cnt']
+    cur.execute(
+        "SELECT id, total, status, created_at, paystack_reference FROM orders WHERE user_id=%s ORDER BY created_at DESC LIMIT 5",
+        (current_user.id,),
+    )
+    recent_orders = cur.fetchall()
+    cur.close()
+    return render_template(
+        "account/profile.html",
+        user=current_user,
+        order_count=order_count,
+        wishlist_count=wishlist_count,
+        address_count=address_count,
+        review_count=review_count,
+        recent_orders=recent_orders,
+    )
 
 
 @account_bp.route("/profile", methods=["GET", "POST"])
@@ -145,3 +168,152 @@ def order_detail(order_id):
     items = cur.fetchall()
     cur.close()
     return render_template("account/order_detail.html", order=order, items=items)
+
+
+# ─────────────────────────────────────────────
+# Order Tracking
+# ─────────────────────────────────────────────
+@account_bp.route("/order/<int:order_id>/track")
+@login_required
+def track_order(order_id):
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "SELECT id, total, status, created_at, paystack_reference, tracking_number, shipping_address "
+        "FROM orders WHERE id=%s AND user_id=%s",
+        (order_id, current_user.id),
+    )
+    order = cur.fetchone()
+    if not order:
+        flash("Order not found.", "warning")
+        cur.close()
+        return redirect(url_for("account.orders"))
+
+    cur.execute(
+        "SELECT status, note, location, created_at FROM order_tracking "
+        "WHERE order_id=%s ORDER BY created_at ASC",
+        (order_id,),
+    )
+    tracking_events = cur.fetchall()
+
+    # If no manual tracking events yet, synthesise one from order status
+    if not tracking_events:
+        tracking_events = [{
+            'status': 'Order Placed',
+            'note':   'Your order has been received and is being processed.',
+            'location': 'Flamingos Warehouse',
+            'created_at': order['created_at'],
+        }]
+        if order['status'] in ('paid', 'shipped', 'delivered'):
+            tracking_events.append({
+                'status': 'Payment Confirmed',
+                'note': 'Payment verified successfully.',
+                'location': 'Flamingos Processing Centre',
+                'created_at': order['created_at'],
+            })
+        if order['status'] in ('shipped', 'delivered'):
+            tracking_events.append({
+                'status': 'Shipped',
+                'note': 'Your order has left our warehouse.',
+                'location': 'Lagos Hub',
+                'created_at': order['created_at'],
+            })
+        if order['status'] == 'delivered':
+            tracking_events.append({
+                'status': 'Delivered',
+                'note': 'Your order has been delivered.',
+                'location': 'Delivery Address',
+                'created_at': order['created_at'],
+            })
+
+    cur.close()
+    return render_template(
+        "account/track_order.html",
+        order=order,
+        tracking_events=tracking_events,
+    )
+
+
+# ─────────────────────────────────────────────
+# Returns — submit request
+# ─────────────────────────────────────────────
+@account_bp.route("/order/<int:order_id>/return", methods=["GET", "POST"])
+@login_required
+def request_return(order_id):
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "SELECT id, total, status, created_at FROM orders WHERE id=%s AND user_id=%s",
+        (order_id, current_user.id),
+    )
+    order = cur.fetchone()
+    if not order:
+        flash("Order not found.", "warning")
+        cur.close()
+        return redirect(url_for("account.orders"))
+
+    if request.method == "POST":
+        reason  = request.form.get("reason", "").strip()
+        details = request.form.get("details", "").strip()
+        if not reason:
+            flash("Please select a reason.", "warning")
+        else:
+            # Check no existing pending request
+            cur.execute(
+                "SELECT id FROM return_requests WHERE order_id=%s AND user_id=%s AND status='pending'",
+                (order_id, current_user.id),
+            )
+            if cur.fetchone():
+                flash("A return request for this order is already pending.", "warning")
+            else:
+                cur.execute(
+                    "INSERT INTO return_requests (order_id, user_id, reason, details) VALUES (%s,%s,%s,%s)",
+                    (order_id, current_user.id, reason, details),
+                )
+                mysql.connection.commit()
+                flash("Return request submitted. We'll review it within 24 hours.", "success")
+                cur.close()
+                return redirect(url_for("account.order_detail", order_id=order_id))
+
+    cur.execute(
+        "SELECT id, reason, details, status, created_at FROM return_requests "
+        "WHERE order_id=%s AND user_id=%s ORDER BY created_at DESC",
+        (order_id, current_user.id),
+    )
+    existing_returns = cur.fetchall()
+    cur.close()
+    return render_template(
+        "account/request_return.html",
+        order=order,
+        existing_returns=existing_returns,
+    )
+
+
+# ─────────────────────────────────────────────
+# Loyalty / Rewards
+# ─────────────────────────────────────────────
+@account_bp.route("/rewards")
+@login_required
+def rewards():
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "SELECT SUM(points) AS total FROM loyalty_points WHERE user_id=%s",
+        (current_user.id,),
+    )
+    row = cur.fetchone()
+    total_points = int(row['total'] or 0)
+
+    cur.execute(
+        "SELECT points, event_type, reference, created_at "
+        "FROM loyalty_points WHERE user_id=%s ORDER BY created_at DESC LIMIT 30",
+        (current_user.id,),
+    )
+    history = cur.fetchall()
+
+    # Points value: 100 pts = ₦1,000
+    value = (total_points // 100) * 1000
+    cur.close()
+    return render_template(
+        "account/rewards.html",
+        total_points=total_points,
+        history=history,
+        value=value,
+    )

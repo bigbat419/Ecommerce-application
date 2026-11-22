@@ -1,51 +1,273 @@
 {% extends 'layout.html' %}
 {% block title %}{{ product.name }}{% endblock %}
+
 {% block content %}
-<nav aria-label="breadcrumb" class="mb-3">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url_for('products.list_products') }}">Products</a></li>
-    <li class="breadcrumb-item active">{{ product.name }}</li>
-  </ol>
-</nav>
-
-<div class="row g-4">
-  <div class="col-md-5">
-    {% if product.image %}
-      <img src="{{ url_for('static', filename=product.image) }}" class="img-fluid rounded shadow-sm" alt="{{ product.name }}">
-    {% else %}
-      <div class="d-flex align-items-center justify-content-center bg-light rounded" style="height:300px;">
-        <span class="text-muted">No image</span>
-      </div>
-    {% endif %}
-  </div>
-  <div class="col-md-7">
-    <h2>{{ product.name }}</h2>
-    {% if product.category %}
-      <span class="badge bg-secondary mb-2">{{ product.category }}</span>
-    {% endif %}
-    <p class="text-muted">{{ product.description or 'No description available.' }}</p>
-    <h3 class="text-primary mb-1">₦{{ "%.2f"|format(product.price|float) }}</h3>
-    <p class="mb-3">
-      {% if product.stock > 0 %}
-        <span class="text-success">✓ In stock ({{ product.stock }} available)</span>
-      {% else %}
-        <span class="text-danger">Out of stock</span>
-      {% endif %}
-    </p>
-
-    {% if current_user.is_authenticated %}
-      {% if product.stock > 0 %}
-      <form method="post" action="{{ url_for('cart.cart_add', product_id=product.id) }}" class="d-flex gap-2 align-items-center">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input class="form-control" name="quantity" type="number" value="1" min="1" max="{{ product.stock }}" style="width:80px;">
-        <button class="btn btn-success" type="submit">Add to Cart</button>
-      </form>
-      {% else %}
-        <button class="btn btn-secondary" disabled>Out of Stock</button>
-      {% endif %}
-    {% else %}
-      <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login to Buy</a>
-    {% endif %}
+{# breadcrumb #}
+<div class="page-header">
+  <div class="container">
+    <ol class="breadcrumb">
+      <li><a href="{{ url_for('index') }}">Home</a></li>
+      <li><a href="{{ url_for('products.list_products') }}">Shop</a></li>
+      {% if product.category %}<li><a href="{{ url_for('products.list_products', category=product.category) }}">{{ product.category }}</a></li>{% endif %}
+      <li>{{ product.name }}</li>
+    </ol>
   </div>
 </div>
+
+<div class="container pb-5">
+  <div class="row g-4">
+
+    {# ── Image col ─────────────────────────────────────────────── #}
+    <div class="col-md-5">
+      <div class="detail-img-box">
+        {% if product.image %}
+          <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" id="mainImg">
+        {% else %}
+          <div style="font-size:5rem;color:var(--grey-300);"><i class="bi bi-image"></i></div>
+        {% endif %}
+      </div>
+      {# share row #}
+      <div class="d-flex align-items-center gap-3 mt-3 fs-xs text-muted">
+        <span class="fw-600">Share:</span>
+        <a href="#" onclick="navigator.share&&navigator.share({title:'{{ product.name }}',url:location.href});return false;" class="text-muted"><i class="bi bi-share"></i> Share</a>
+        <a href="#" class="text-muted"><i class="bi bi-twitter-x"></i></a>
+        <a href="#" class="text-muted"><i class="bi bi-facebook"></i></a>
+        <a href="#" class="text-muted"><i class="bi bi-whatsapp"></i></a>
+      </div>
+    </div>
+
+    {# ── Info col ──────────────────────────────────────────────── #}
+    <div class="col-md-7">
+
+      {# category + status #}
+      <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+        {% if product.category %}
+          <span class="badge badge-primary">{{ product.category }}</span>
+        {% endif %}
+        {% if product.stock > 0 %}
+          <span class="stock-badge in"><i class="bi bi-check-circle-fill"></i> In Stock</span>
+        {% else %}
+          <span class="stock-badge out"><i class="bi bi-x-circle-fill"></i> Out of Stock</span>
+        {% endif %}
+      </div>
+
+      <h1 style="font-family:var(--font-d);font-size:1.6rem;font-weight:700;color:var(--dark);letter-spacing:-.02em;margin-bottom:.5rem;">{{ product.name }}</h1>
+
+      {# Rating #}
+      {% set review_count = reviews|length %}
+      {% if review_count > 0 %}
+        {% set avg = (reviews | map(attribute='rating') | sum) / review_count %}
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="pcard-stars" style="font-size:1rem;">
+            {% for i in range(1,6) %}{{ '★' if i <= avg|round else '☆' }}{% endfor %}
+          </span>
+          <span class="fs-sm text-muted">{{ "%.1f"|format(avg) }} ({{ review_count }} review{% if review_count!=1 %}s{% endif %})</span>
+          <a href="#reviews" class="fs-xs text-p">Read reviews</a>
+        </div>
+      {% else %}
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="pcard-stars" style="font-size:1rem;">★★★★★</span>
+          <span class="fs-xs text-muted">No reviews yet</span>
+        </div>
+      {% endif %}
+
+      {# Price #}
+      <div class="d-flex align-items-baseline gap-2 mb-1">
+        <span class="detail-price">₦{{ "%.0f"|format(product.price|float) }}</span>
+        {% if product.stock <= 5 and product.stock > 0 %}
+          <span class="detail-badge">Only {{ product.stock }} left!</span>
+        {% endif %}
+      </div>
+      <p class="fs-sm text-muted mb-3">
+        {% if product.stock > 10 %}Free shipping on this order.
+        {% elif product.stock > 0 %}Hurry — only {{ product.stock }} units left in stock!
+        {% endif %}
+      </p>
+
+      {% if product.description %}
+      <p style="font-size:.9rem;color:var(--dark-2);line-height:1.75;margin-bottom:1.4rem;">{{ product.description }}</p>
+      {% endif %}
+
+      {# Add to cart / Buy now #}
+      {% if current_user.is_authenticated %}
+        {% if product.stock > 0 %}
+        <form method="post" action="{{ url_for('cart.cart_add', product_id=product.id) }}" id="addForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+            <div class="qty-wrap">
+              <label class="fs-xs fw-600 text-muted">Qty:</label>
+              <div class="qty-box">
+                <button type="button" onclick="stepQty(-1)">−</button>
+                <input type="number" name="quantity" id="qtyInp" value="1" min="1" max="{{ product.stock }}" readonly>
+                <button type="button" onclick="stepQty(1)">+</button>
+              </div>
+            </div>
+            <span class="fs-xs text-muted">{{ product.stock }} available</span>
+          </div>
+          <div class="d-flex gap-2 flex-wrap mb-3">
+            <button type="submit" class="btn-p btn-lg flex-grow-1" style="max-width:200px;">
+              <i class="bi bi-bag-plus me-1"></i>Add to Cart
+            </button>
+            <a href="{{ url_for('checkout.checkout') }}" class="btn-accent btn-lg flex-grow-1" style="max-width:200px;text-decoration:none;" onclick="document.getElementById('addForm').submit();return false;">
+              <i class="bi bi-lightning-fill me-1"></i>Buy Now
+            </a>
+          </div>
+        </form>
+        {% else %}
+        <button class="btn-p btn-lg opacity-50 mb-3" disabled style="max-width:220px;">Out of Stock</button>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('wishlist.toggle_wishlist', product_id=product.id) }}" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-outline btn-sm">
+            <i class="bi bi-heart{% if in_wishlist %}-fill{% endif %} me-1"></i>
+            {{ 'Saved to Wishlist' if in_wishlist else 'Add to Wishlist' }}
+          </button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn-p btn-lg">
+          <i class="bi bi-person me-2"></i>Login to Purchase
+        </a>
+      {% endif %}
+
+      {# Trust micro-badges #}
+      <div class="d-flex flex-wrap gap-3 mt-4 pt-3" style="border-top:1px solid var(--grey-200);">
+        <span class="d-flex align-items-center gap-1 fs-xs text-muted"><i class="bi bi-truck text-p"></i> Free delivery ₦25k+</span>
+        <span class="d-flex align-items-center gap-1 fs-xs text-muted"><i class="bi bi-arrow-counterclockwise text-p"></i> 30-day returns</span>
+        <span class="d-flex align-items-center gap-1 fs-xs text-muted"><i class="bi bi-shield-check text-p"></i> Secure payment</span>
+      </div>
+    </div>
+  </div>
+
+  {# ── Tabs ─────────────────────────────────────────────────────── #}
+  <div class="mt-5">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('desc',this)">Description</button>
+      <button class="tab" onclick="switchTab('specs',this)">Specifications</button>
+      <button class="tab" onclick="switchTab('reviews',this)" id="reviewsTab">
+        Reviews{% if reviews %} ({{ reviews|length }}){% endif %}
+      </button>
+    </div>
+
+    <div class="tab-pane active" id="tab-desc">
+      <p style="font-size:.92rem;line-height:1.85;color:var(--dark-2);max-width:720px;">
+        {{ product.description or 'No description provided yet.' }}
+      </p>
+    </div>
+
+    <div class="tab-pane" id="tab-specs">
+      <table class="table table-bordered table-sm" style="max-width:480px;font-size:.85rem;">
+        <tbody>
+          <tr><th style="width:35%">Category</th><td>{{ product.category or '—' }}</td></tr>
+          <tr><th>Price</th><td>₦{{ "%.2f"|format(product.price|float) }}</td></tr>
+          <tr><th>Stock</th><td>{{ product.stock }} units</td></tr>
+          <tr><th>SKU</th><td class="font-monospace">FLM-{{ '%05d'|format(product.id) }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tab-pane" id="tab-reviews" id="reviews">
+      {# Submit review #}
+      {% if current_user.is_authenticated %}
+      <div class="card mb-4" style="max-width:560px;">
+        <div class="card-header"><i class="bi bi-pencil-square me-2 text-p"></i>Write a Review</div>
+        <div class="card-body">
+          <form method="post" action="{{ url_for('reviews.submit_review', product_id=product.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label class="form-label-sm">Your Rating</label>
+              <div class="star-input">
+                {% for i in [5,4,3,2,1] %}
+                  <input type="radio" id="s{{ i }}" name="rating" value="{{ i }}" {{ 'checked' if i==5 }}>
+                  <label for="s{{ i }}">★</label>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label-sm">Title</label>
+              <input class="form-input" type="text" name="title" placeholder="Summarise your experience" maxlength="160">
+            </div>
+            <div class="mb-3">
+              <label class="form-label-sm">Review</label>
+              <textarea class="form-input" name="body" rows="3" placeholder="What did you like or dislike?"></textarea>
+            </div>
+            <button type="submit" class="btn-p btn-sm">Post Review</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if reviews %}
+        {% for rv in reviews %}
+        <div class="d-flex gap-3 mb-4 pb-4" style="border-bottom:1px solid var(--grey-200);max-width:680px;">
+          <div class="acct-avatar flex-shrink-0" style="width:40px;height:40px;font-size:1rem;border-radius:50%;">
+            {{ rv.reviewer[0].upper() if rv.reviewer else '?' }}
+          </div>
+          <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="fw-600 fs-sm">{{ rv.reviewer }}</span>
+              <span class="pcard-stars fs-xs">{{ '★'*rv.rating }}{{ '☆'*(5-rv.rating) }}</span>
+              <span class="fs-xs text-muted">{{ rv.created_at.strftime('%d %b %Y') if rv.created_at else '' }}</span>
+            </div>
+            {% if rv.title %}<div class="fw-600 mt-1 fs-sm">{{ rv.title }}</div>{% endif %}
+            {% if rv.body %}<p class="fs-sm text-muted mt-1 mb-0">{{ rv.body }}</p>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted fs-sm">No reviews yet. Be the first!</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── You May Also Like ──────────────────────────────────────── #}
+  {% if related %}
+  <section class="mt-5 pt-4" style="border-top:1px solid var(--grey-200);">
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">Recommendations</div>
+        <h2>You May Also Like</h2>
+      </div>
+      {% if product.category %}
+      <a href="{{ url_for('products.list_products', category=product.category) }}">View all <i class="bi bi-arrow-right"></i></a>
+      {% endif %}
+    </div>
+    <div class="row row-cols-2 row-cols-md-4 g-3">
+      {% for rp in related %}
+      <div class="col">
+        <div class="pcard h-100">
+          <div class="pcard-img">
+            {% if rp.image %}<img src="{{ url_for('static', filename=rp.image) }}" alt="{{ rp.name }}" loading="lazy">
+            {% else %}<div class="pcard-img-placeholder"><i class="bi bi-image"></i></div>{% endif %}
+          </div>
+          <div class="pcard-body">
+            <div class="pcard-name">
+              <a href="{{ url_for('products.product_detail', product_id=rp.id) }}" class="text-dark" style="text-decoration:none;">{{ rp.name }}</a>
+            </div>
+            <div class="pcard-price">₦{{ "%.0f"|format(rp.price|float) }}</div>
+            {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('cart.cart_add', product_id=rp.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="quantity" value="1">
+              <button type="submit" class="pcard-add btn-sm"><i class="bi bi-bag-plus"></i> Add to Cart</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+<script>
+function stepQty(d){const i=document.getElementById('qtyInp');let v=parseInt(i.value)+d;i.value=Math.max(1,Math.min({{ product.stock }},v));}
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
 {% endblock %}

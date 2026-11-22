@@ -1,0 +1,129 @@
+{% extends 'layout.html' %}
+{% block title %}My Wishlist{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h1>My Wishlist</h1>
+        <ol class="breadcrumb mt-1">
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('account.profile') }}">Account</a></li>
+          <li>Wishlist</li>
+        </ol>
+      </div>
+      {# Share Wishlist link (wireframe screen 10) #}
+      <a href="#" class="btn-outline btn-sm" onclick="copyWishlistLink(this);return false;">
+        <i class="bi bi-share me-1"></i>Share Wishlist →
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+  {% if items %}
+
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <p class="text-muted fs-sm mb-0">
+      <strong>{{ items|length }}</strong> saved item{% if items|length != 1 %}s{% endif %}
+    </p>
+    <a href="{{ url_for('products.list_products') }}" class="fs-xs fw-600 text-p">
+      <i class="bi bi-arrow-left me-1"></i>Continue Shopping
+    </a>
+  </div>
+
+  <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3">
+    {% for item in items %}
+    <div class="col">
+      <div class="pcard h-100">
+
+        {# Image #}
+        <div class="pcard-img">
+          {% if item.image %}
+            <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}" loading="lazy">
+          {% else %}
+            <div class="pcard-img-placeholder"><i class="bi bi-image"></i></div>
+          {% endif %}
+
+          {# Stock badge #}
+          {% if item.stock == 0 %}
+            <span class="pcard-badge out">Sold Out</span>
+          {% endif %}
+
+          {# Remove heart button #}
+          <form method="post" action="{{ url_for('wishlist.remove_wishlist', wish_id=item.wish_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="pcard-wish active" title="Remove from wishlist">
+              <i class="bi bi-heart-fill"></i>
+            </button>
+          </form>
+        </div>
+
+        <div class="pcard-body">
+          {% if item.category %}
+            <div class="pcard-cat">{{ item.category }}</div>
+          {% endif %}
+          <div class="pcard-name">
+            <a href="{{ url_for('products.product_detail', product_id=item.id) }}"
+               class="text-dark" style="text-decoration:none;">{{ item.name }}</a>
+          </div>
+          <div class="d-flex align-items-center mb-1">
+            <span class="pcard-stars">★★★★★</span>
+          </div>
+          <div class="pcard-price mb-2">₦{{ "%.0f"|format(item.price|float) }}</div>
+
+          {# Add to Cart / Move to Cart #}
+          {% if item.stock > 0 %}
+          <form method="post" action="{{ url_for('wishlist.move_to_cart', wish_id=item.wish_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="pcard-add">
+              <i class="bi bi-bag-plus"></i> Add to Cart
+            </button>
+          </form>
+          {% else %}
+          <button class="pcard-add" disabled>Out of Stock</button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# Bottom CTA row #}
+  <div class="d-flex align-items-center justify-content-between mt-4 flex-wrap gap-3">
+    <a href="{{ url_for('products.list_products') }}" class="btn-outline">
+      <i class="bi bi-bag me-1"></i>Discover More Products
+    </a>
+    <span class="fs-xs text-muted">
+      Items are saved until you remove them or they go out of stock.
+    </span>
+  </div>
+
+  {% else %}
+  {# Empty state #}
+  <div style="min-height:50vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3rem 1rem;">
+    <div style="font-size:4.5rem;margin-bottom:1rem;">🤍</div>
+    <h3 style="font-family:var(--font-d);color:var(--dark);">Your wishlist is empty</h3>
+    <p class="text-muted fs-sm mb-4" style="max-width:340px;">
+      Save products you love by tapping the heart icon — they'll appear here.
+    </p>
+    <a href="{{ url_for('products.list_products') }}" class="btn-p btn-lg">
+      <i class="bi bi-bag me-2"></i>Discover Products
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function copyWishlistLink(btn) {
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check me-1"></i>Link Copied!';
+    btn.style.background = 'var(--p)';
+    btn.style.color = '#fff';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.color = ''; }, 2000);
+  }).catch(() => alert('Copy: ' + window.location.href));
+}
+</script>
+{% endblock %}

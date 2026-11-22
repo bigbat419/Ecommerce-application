@@ -1,42 +1,91 @@
-{% extends 'layout.html' %}
+{% extends 'admin/layout_admin.html' %}
 {% block title %}Products{% endblock %}
+{% block page_title %}Product Management{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h2>Products</h2>
-  <a href="{{ url_for('admin.add_product') }}" class="btn btn-primary">+ Add Product</a>
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0" style="font-family:var(--flm-font-display);font-size:1.5rem;color:var(--flm-dark);">Products</h2>
+    <p class="text-muted fs-sm mb-0">{{ products|length }} total products</p>
+  </div>
+  <a href="{{ url_for('admin.add_product') }}" class="btn-flm d-flex align-items-center gap-2">
+    <i class="bi bi-plus-circle"></i>Add Product
+  </a>
 </div>
 
-<div class="table-responsive">
-  <table class="table table-hover">
-    <thead class="table-light">
-      <tr><th>#</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Created</th><th>Actions</th></tr>
-    </thead>
-    <tbody>
-      {% for p in products %}
-      <tr>
-        <td>{{ p.id }}</td>
-        <td>{{ p.name }}</td>
-        <td>{{ p.category or '—' }}</td>
-        <td>₦{{ "%.2f"|format(p.price|float) }}</td>
-        <td>
-          <span class="badge bg-{{ 'danger' if p.stock == 0 else 'warning' if p.stock < 10 else 'success' }}">
-            {{ p.stock }}
-          </span>
-        </td>
-        <td>{{ p.created_at.strftime('%d %b %Y') if p.created_at else '' }}</td>
-        <td>
-          <a href="{{ url_for('admin.edit_product', product_id=p.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-          <form method="post" action="{{ url_for('admin.delete_product', product_id=p.id) }}" class="d-inline"
-                onsubmit="return confirm('Delete this product?')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
-          </form>
-        </td>
-      </tr>
-      {% else %}
-      <tr><td colspan="7" class="text-center text-muted">No products found.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="flm-card">
+  <div class="flm-card-header">
+    <form method="get" class="d-flex gap-2" style="flex:1;">
+      <input type="text" name="q" value="{{ request.args.get('q','') }}"
+             placeholder="Search products…"
+             style="border:1.5px solid var(--flm-grey-200);border-radius:8px;padding:.4rem .9rem;font-size:.85rem;outline:none;flex:1;max-width:280px;">
+      <button type="submit" class="btn-flm btn-flm-sm">Search</button>
+    </form>
+  </div>
+  <div class="flm-card-body p-0">
+    <table class="flm-table">
+      <thead>
+        <tr>
+          <th style="width:60px;">Image</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Added</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>
+            {% if p.image %}
+              <img src="{{ url_for('static', filename=p.image) }}"
+                   style="width:48px;height:48px;object-fit:cover;border-radius:8px;">
+            {% else %}
+              <div style="width:48px;height:48px;background:var(--flm-grey-100);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--flm-grey-600);">
+                <i class="bi bi-image"></i>
+              </div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="fw-600 fs-sm">{{ p.name }}</div>
+            {% if p.slug %}<div class="fs-xs text-muted font-monospace">/{{ p.slug }}</div>{% endif %}
+          </td>
+          <td>
+            {% if p.category %}
+              <span class="flm-badge flm-badge-primary">{{ p.category }}</span>
+            {% else %}
+              <span class="text-muted fs-xs">—</span>
+            {% endif %}
+          </td>
+          <td class="fw-700" style="color:var(--flm-primary);">₦{{ "%.0f"|format(p.price|float) }}</td>
+          <td>
+            <span class="flm-badge {% if p.stock == 0 %}flm-badge-danger{% elif p.stock <= 5 %}flm-badge-warning{% else %}flm-badge-success{% endif %}">
+              {{ p.stock }}
+            </span>
+          </td>
+          <td class="fs-xs text-muted">{{ p.created_at.strftime('%d %b %Y') if p.created_at else '—' }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('admin.edit_product', product_id=p.id) }}" class="btn-flm btn-flm-sm" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="post" action="{{ url_for('admin.delete_product', product_id=p.id) }}"
+                    onsubmit="return confirm('Delete {{ p.name }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-flm-outline btn-flm-sm" style="border-color:var(--flm-primary);color:var(--flm-primary);" title="Delete">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No products found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'layout.html' %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Notifications</h1>
+    <ol class="breadcrumb mt-1"><li><a href="{{ url_for('index') }}">Home</a></li><li><a href="{{ url_for('account.profile') }}">Account</a></li><li>Notifications</li></ol>
+  </div>
+</div>
+<div class="container pb-5">
+  <div class="d-flex gap-4 align-items-start flex-column flex-lg-row">
+    {% include 'account/_sidebar.html' %}
+    <div class="flex-grow-1">
+      <div class="card">
+        <div class="card-header">
+          <span><i class="bi bi-bell me-2 text-p"></i>Notifications</span>
+          <button class="btn-outline btn-sm" onclick="return false;">Mark all read</button>
+        </div>
+        <div class="card-body">
+          {% set notifs = [
+            ('bi-box-seam','Order Shipped','Your order #ORD000012 has been shipped and is on the way.','2 hrs ago',True,'badge-info'),
+            ('bi-tag','Sale Alert','Up to 40% off Women\'s collection — today only!','5 hrs ago',True,'badge-warning'),
+            ('bi-check-circle','Order Delivered','Your order #ORD000011 was delivered successfully.','Yesterday','False','badge-success'),
+            ('bi-gift','Welcome Bonus','You have earned 50 loyalty points on your last purchase.','2 days ago',False,'badge-primary'),
+          ] %}
+          {% for icon, title, body, time, unread, badge_class in notifs %}
+          <div class="d-flex gap-3 pb-3 mb-3 {% if not loop.last %}border-bottom{% endif %}" style="{{ 'background:var(--p-pale);' if unread else '' }}border-color:var(--grey-200)!important;">
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--p-pale);display:flex;align-items:center;justify-content:center;color:var(--p);flex-shrink:0;font-size:1rem;">
+              <i class="bi {{ icon }}"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="fw-600 fs-sm">{{ title }}</span>
+                {% if unread %}<span class="badge {{ badge_class }}">New</span>{% endif %}
+                <span class="ms-auto fs-xs text-muted">{{ time }}</span>
+              </div>
+              <div class="fs-xs text-muted mt-1">{{ body }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

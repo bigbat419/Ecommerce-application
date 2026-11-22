@@ -1,0 +1,83 @@
+{% extends 'admin/layout_admin.html' %}
+{% block title %}Coupons{% endblock %}
+{% block page_title %}Coupon Management{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0" style="font-family:var(--flm-font-display);font-size:1.5rem;color:var(--flm-dark);">Coupons</h2>
+    <p class="text-muted fs-sm mb-0">Discount codes for customers</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="flm-card">
+      <div class="flm-card-header"><i class="bi bi-tag me-2 text-flm"></i>Active Coupons</div>
+      <div class="flm-card-body p-0">
+        <table class="flm-table">
+          <thead>
+            <tr><th>Code</th><th>Discount</th><th>Uses</th><th>Expires</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for c in coupons %}
+            <tr>
+              <td class="font-monospace fw-700">{{ c.code }}</td>
+              <td><span class="flm-badge flm-badge-success">{{ c.discount_pct }}% off</span></td>
+              <td class="fs-sm text-muted">{{ c.uses }} / {{ c.max_uses or '∞' }}</td>
+              <td class="fs-xs text-muted">{{ c.expires_at or 'No expiry' }}</td>
+              <td>
+                <span class="flm-badge {{ 'flm-badge-success' if c.active else 'flm-badge-grey' }}">
+                  {{ 'Active' if c.active else 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('admin.delete_coupon', coupon_id=c.id) }}"
+                      onsubmit="return confirm('Delete coupon {{ c.code }}?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn-flm-outline btn-flm-sm" style="border-color:var(--flm-primary);color:var(--flm-primary);">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">No coupons yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="flm-card">
+      <div class="flm-card-header"><i class="bi bi-plus-circle me-2 text-flm"></i>Create Coupon</div>
+      <div class="flm-card-body">
+        <form method="post" action="{{ url_for('admin.create_coupon') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-3">
+            <label class="flm-label">Coupon Code <span class="text-flm">*</span></label>
+            <input class="flm-input font-monospace" type="text" name="code" required
+                   placeholder="FLAMINGO10" style="text-transform:uppercase;"
+                   oninput="this.value=this.value.toUpperCase()">
+          </div>
+          <div class="mb-3">
+            <label class="flm-label">Discount % <span class="text-flm">*</span></label>
+            <input class="flm-input" type="number" name="discount_pct" min="1" max="100" required placeholder="10">
+          </div>
+          <div class="mb-3">
+            <label class="flm-label">Max Uses (blank = unlimited)</label>
+            <input class="flm-input" type="number" name="max_uses" min="1" placeholder="100">
+          </div>
+          <div class="mb-4">
+            <label class="flm-label">Expires On (blank = no expiry)</label>
+            <input class="flm-input" type="date" name="expires_at">
+          </div>
+          <button type="submit" class="btn-flm w-100"><i class="bi bi-plus me-1"></i>Create Coupon</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -55,7 +55,7 @@ def checkout():
 
         return redirect(url_for('checkout.checkout'))
 
-    # GET — load cart items to display total
+    # GET — load cart items and saved addresses
     cur = mysql.connection.cursor()
     cur.execute("""
         SELECT ci.id, p.name, p.price, ci.quantity
@@ -64,6 +64,11 @@ def checkout():
         WHERE ci.user_id = %s
     """, (current_user.id,))
     items = cur.fetchall()
+    cur.execute(
+        "SELECT id, label, line1, city, country FROM addresses WHERE user_id=%s ORDER BY created_at DESC",
+        (current_user.id,),
+    )
+    addresses = cur.fetchall()
     cur.close()
 
     for it in items:
@@ -72,7 +77,13 @@ def checkout():
 
     total = sum(it['price'] * it['quantity'] for it in items)
     public_key = current_app.config.get('PAYSTACK_PUBLIC_KEY', '')
-    return render_template('checkout/checkout.html', items=items, total=total, public_key=public_key)
+    return render_template(
+        'checkout/checkout.html',
+        items=items,
+        total=total,
+        public_key=public_key,
+        addresses=addresses,
+    )
 
 
 # ----------------------------------
@@ -174,6 +185,23 @@ def _confirm_order(reference):
         "UPDATE orders SET status='paid' WHERE paystack_reference=%s",
         (reference,)
     )
+    # Award loyalty points: 1 pt per ₦100 spent
+    cur.execute(
+        "SELECT id, user_id, total FROM orders WHERE paystack_reference=%s",
+        (reference,)
+    )
+    order = cur.fetchone()
+    if order:
+        points = max(1, int(float(order['total']) // 100))
+        cur.execute(
+            "INSERT INTO loyalty_points (user_id, points, event_type, reference) VALUES (%s,%s,'purchase',%s)",
+            (order['user_id'], points, reference),
+        )
+        # Add first tracking event
+        cur.execute(
+            "INSERT INTO order_tracking (order_id, status, note, location) VALUES (%s,'Payment Confirmed','Payment verified via Paystack.','Flamingos Processing Centre')",
+            (order['id'],),
+        )
     mysql.connection.commit()
     cur.close()
 

@@ -1,38 +1,63 @@
-{% extends 'layout.html' %}
+{% extends 'admin/layout_admin.html' %}
 {% block title %}Users{% endblock %}
+{% block page_title %}User Management{% endblock %}
 {% block content %}
-<h2 class="mb-4">Users</h2>
-<div class="table-responsive">
-  <table class="table table-hover">
-    <thead class="table-light">
-      <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Admin</th><th>Joined</th><th>Actions</th></tr>
-    </thead>
-    <tbody>
-      {% for u in users %}
-      <tr>
-        <td>{{ u.id }}</td>
-        <td>{{ u.name }}</td>
-        <td>{{ u.email }}</td>
-        <td>{{ u.role or 'user' }}</td>
-        <td>
-          <span class="badge bg-{{ 'success' if u.is_admin else 'secondary' }}">
-            {{ 'Yes' if u.is_admin else 'No' }}
-          </span>
-        </td>
-        <td>{{ u.created_at.strftime('%d %b %Y') if u.created_at else '' }}</td>
-        <td>
-          <form method="post" action="{{ url_for('admin.toggle_admin', user_id=u.id) }}" class="d-inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn-sm btn-outline-secondary" type="submit">
-              {{ 'Remove Admin' if u.is_admin else 'Make Admin' }}
-            </button>
-          </form>
-        </td>
-      </tr>
-      {% else %}
-      <tr><td colspan="7" class="text-center text-muted">No users found.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0" style="font-family:var(--flm-font-display);font-size:1.5rem;color:var(--flm-dark);">Users</h2>
+    <p class="text-muted fs-sm mb-0">{{ users|length }} registered users</p>
+  </div>
+</div>
+
+<div class="flm-card">
+  <div class="flm-card-body p-0">
+    <table class="flm-table">
+      <thead>
+        <tr><th>User</th><th>Email</th><th>Role</th><th>Admin</th><th>Joined</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div style="width:36px;height:36px;border-radius:50%;background:{% if u.is_admin %}var(--flm-primary){% else %}var(--flm-grey-200){% endif %};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:{% if u.is_admin %}#fff{% else %}var(--flm-grey-600){% endif %};flex-shrink:0;">
+                {{ u.name[0].upper() }}
+              </div>
+              <span class="fw-600 fs-sm">{{ u.name }}</span>
+            </div>
+          </td>
+          <td class="fs-sm text-muted">{{ u.email }}</td>
+          <td>
+            <span class="flm-badge flm-badge-grey">{{ u.role or 'user' }}</span>
+          </td>
+          <td>
+            {% if u.is_admin %}
+              <span class="flm-badge flm-badge-primary"><i class="bi bi-shield-check me-1"></i>Admin</span>
+            {% else %}
+              <span class="flm-badge flm-badge-grey">User</span>
+            {% endif %}
+          </td>
+          <td class="fs-xs text-muted">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+          <td>
+            {% if u.id != current_user.id %}
+            <form method="post" action="{{ url_for('admin.toggle_admin', user_id=u.id) }}"
+                  onsubmit="return confirm('Toggle admin status for {{ u.name }}?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-flm btn-flm-sm" style="{% if u.is_admin %}background:var(--flm-grey-600);{% endif %}">
+                {{ 'Revoke Admin' if u.is_admin else 'Make Admin' }}
+              </button>
+            </form>
+            {% else %}
+            <span class="fs-xs text-muted">You</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

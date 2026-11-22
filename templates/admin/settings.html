@@ -1,0 +1,137 @@
+{% extends 'admin/layout_admin.html' %}
+{% block title %}Store Settings{% endblock %}
+{% block page_title %}Store Settings{% endblock %}
+{% block content %}
+
+<div class="row g-4">
+
+  <div class="col-lg-8">
+    <form method="post" action="{{ url_for('admin.settings') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      {# General #}
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-shop me-2 text-p"></i>General Information</div>
+        <div class="card-body">
+          <div class="form-row form-row-2">
+            <div>
+              <label class="form-label-sm">Store Name</label>
+              <input class="form-input" type="text" name="site_name" value="{{ s.get('site_name','Flamingos') }}">
+            </div>
+            <div>
+              <label class="form-label-sm">Tagline</label>
+              <input class="form-input" type="text" name="site_tagline" value="{{ s.get('site_tagline','Shop Smarter. Live Better.') }}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label class="form-label-sm">Meta Description</label>
+              <textarea class="form-input" name="meta_description" rows="2">{{ s.get('meta_description','') }}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Currency & Payments #}
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-currency-exchange me-2 text-p"></i>Currency & Pricing</div>
+        <div class="card-body">
+          <div class="form-row form-row-2">
+            <div>
+              <label class="form-label-sm">Currency Code</label>
+              <input class="form-input" type="text" name="currency" value="{{ s.get('currency','NGN') }}" maxlength="3">
+            </div>
+            <div>
+              <label class="form-label-sm">Currency Symbol</label>
+              <input class="form-input" type="text" name="currency_symbol" value="{{ s.get('currency_symbol','₦') }}" maxlength="4">
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label class="form-label-sm">Free Shipping Threshold ({{ s.get('currency_symbol','₦') }})</label>
+              <input class="form-input" type="number" name="free_shipping_above" value="{{ s.get('free_shipping_above','25000') }}" min="0" step="500">
+              <div class="fs-xs text-muted mt-1">Orders above this amount qualify for free shipping.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Contact #}
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-geo-alt me-2 text-p"></i>Contact & Location</div>
+        <div class="card-body">
+          <div class="form-row form-row-2">
+            <div>
+              <label class="form-label-sm">Support Email</label>
+              <input class="form-input" type="email" name="contact_email" value="{{ s.get('contact_email','') }}">
+            </div>
+            <div>
+              <label class="form-label-sm">Support Phone</label>
+              <input class="form-input" type="text" name="contact_phone" value="{{ s.get('contact_phone','') }}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label class="form-label-sm">Business Address</label>
+              <input class="form-input" type="text" name="address" value="{{ s.get('address','') }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Loyalty #}
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-stars me-2 text-p"></i>Loyalty Programme</div>
+        <div class="card-body">
+          <div style="max-width:280px;">
+            <label class="form-label-sm">Points per ₦100 Spent</label>
+            <input class="form-input" type="number" name="loyalty_points_rate" value="{{ s.get('loyalty_points_rate','1') }}" min="0" step="1">
+            <div class="fs-xs text-muted mt-1">Set to 0 to disable the loyalty programme.</div>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-p btn-lg"><i class="bi bi-check2 me-1"></i>Save All Settings</button>
+    </form>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-info-circle me-2 text-p"></i>Quick Reference</div>
+      <div class="card-body">
+        {% for icon, label, val in [
+          ('bi-shop','Store Name', s.get('site_name','Flamingos')),
+          ('bi-currency-exchange','Currency', s.get('currency','NGN')),
+          ('bi-truck','Free Shipping', '₦'~s.get('free_shipping_above','25000')~'+'),
+          ('bi-envelope','Support Email', s.get('contact_email','—')),
+        ] %}
+        <div class="d-flex gap-2 mb-3 align-items-start">
+          <i class="bi {{ icon }} text-p mt-1 flex-shrink-0"></i>
+          <div>
+            <div class="fs-xs text-muted">{{ label }}</div>
+            <div class="fw-600 fs-sm">{{ val or '—' }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-link me-2 text-p"></i>Quick Links</div>
+      <div class="list-group list-group-flush rounded-3">
+        {% for label, endpoint in [
+          ('Shipping Methods', 'admin.shipping'),
+          ('Staff & Roles', 'admin.staff'),
+          ('Coupons', 'admin.coupons'),
+          ('View Store', 'index'),
+        ] %}
+        <a href="{{ url_for(endpoint) }}" class="list-group-item list-group-item-action fs-sm py-2">
+          <i class="bi bi-arrow-right-short me-1 text-p"></i>{{ label }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

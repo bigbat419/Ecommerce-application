@@ -1,0 +1,89 @@
+{% extends 'admin/layout_admin.html' %}
+{% block title %}Inventory{% endblock %}
+{% block page_title %}Inventory Management{% endblock %}
+{% block content %}
+
+{# Stats row #}
+<div class="row g-3 mb-4">
+  {% for icon, label, val, color in [
+    ('bi-x-circle','Out of Stock', out_of_stock, '#EF4444'),
+    ('bi-exclamation-triangle','Low Stock',    low_stock,   '#F59E0B'),
+    ('bi-check-circle','Healthy Stock',  healthy,     '#22C55E'),
+    ('bi-box-seam','Total Products', out_of_stock+low_stock+healthy, '#2B4EFF'),
+  ] %}
+  <div class="col-sm-6 col-xl-3">
+    <div class="admin-stat">
+      <div class="admin-stat-icon" style="background:{{ color }}15;color:{{ color }};"><i class="bi {{ icon }}"></i></div>
+      <div>
+        <div class="admin-stat-val">{{ val }}</div>
+        <div class="admin-stat-lbl">{{ label }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# Threshold control #}
+<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+  <form method="get" class="d-flex align-items-center gap-2">
+    <label class="form-label-sm mb-0">Low stock threshold:</label>
+    <input class="form-input" type="number" name="low" value="{{ low_threshold }}" min="1" max="100" style="width:80px;">
+    <button type="submit" class="btn-p btn-sm">Apply</button>
+  </form>
+  <div class="ms-auto d-flex gap-2">
+    <a href="{{ url_for('admin.inventory', low=low_threshold) }}" class="btn-outline btn-sm">
+      <i class="bi bi-arrow-counterclockwise me-1"></i>Refresh
+    </a>
+  </div>
+</div>
+
+{# Bulk update form #}
+<div class="card">
+  <div class="card-header">
+    <span><i class="bi bi-box-seam me-2 text-p"></i>Stock Levels</span>
+    <span class="fs-xs text-muted">Edit quantities inline, then click Save All</span>
+  </div>
+  <form method="post" action="{{ url_for('admin.inventory_update') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="card-body-flush">
+      <table class="flm-table">
+        <thead>
+          <tr><th>Product</th><th>SKU</th><th>Category</th><th>Price</th><th style="width:130px;">Stock</th><th>Alert</th></tr>
+        </thead>
+        <tbody>
+          {% for p in products %}
+          {% set alert = 'out' if p.stock == 0 else 'low' if p.stock <= low_threshold else 'ok' %}
+          <tr style="{{ 'background:#fef2f2;' if alert=='out' else 'background:#fefce8;' if alert=='low' else '' }}">
+            <td class="fw-600 fs-sm">{{ p.name }}</td>
+            <td class="fs-xs text-muted font-monospace">{{ p.sku or 'FLM-'~'%05d'|format(p.id) }}</td>
+            <td class="fs-sm text-muted">{{ p.category or '—' }}</td>
+            <td class="fs-sm fw-600" style="color:var(--p);">₦{{ "%.0f"|format(p.price|float) }}</td>
+            <td>
+              <input type="number" name="stock_{{ p.id }}" value="{{ p.stock }}" min="0"
+                     class="form-input" style="padding:.35rem .5rem;font-size:.85rem;text-align:center;">
+            </td>
+            <td>
+              {% if alert == 'out' %}
+                <span class="badge badge-danger"><i class="bi bi-x-circle me-1"></i>Out of Stock</span>
+              {% elif alert == 'low' %}
+                <span class="badge badge-warning"><i class="bi bi-exclamation-triangle me-1"></i>Low</span>
+              {% else %}
+                <span class="badge badge-success"><i class="bi bi-check me-1"></i>OK</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-muted py-4">No products.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if products %}
+    <div class="p-3 border-top d-flex gap-2">
+      <button type="submit" class="btn-p"><i class="bi bi-check2 me-1"></i>Save All Stock Levels</button>
+      <a href="{{ url_for('admin.inventory') }}" class="btn-outline">Reset</a>
+    </div>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

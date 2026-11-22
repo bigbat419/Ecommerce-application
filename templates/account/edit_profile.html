@@ -1,24 +1,33 @@
 {% extends 'layout.html' %}
 {% block title %}Edit Profile{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <h2 class="mb-4">Edit Profile</h2>
-    <div class="card">
-      <div class="card-body">
-        <form method="post">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="mb-3">
-            <label class="form-label">Name</label>
-            <input class="form-control" name="name" value="{{ user.name }}" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Email</label>
-            <input class="form-control" value="{{ user.email }}" disabled>
-          </div>
-          <button class="btn btn-primary" type="submit">Save Changes</button>
-          <a href="{{ url_for('account.change_password') }}" class="btn btn-outline-secondary ms-2">Change Password</a>
-        </form>
+<div class="page-header">
+  <div class="container">
+    <h1>Edit Profile</h1>
+    <ol class="breadcrumb mt-1"><li><a href="{{ url_for('index') }}">Home</a></li><li><a href="{{ url_for('account.profile') }}">Account</a></li><li>Edit Profile</li></ol>
+  </div>
+</div>
+<div class="container pb-5">
+  <div class="d-flex gap-4 align-items-start flex-column flex-lg-row">
+    {% include 'account/_sidebar.html' %}
+    <div class="flex-grow-1">
+      <div class="card" style="max-width:520px;">
+        <div class="card-header"><i class="bi bi-person me-2 text-p"></i>Profile Information</div>
+        <div class="card-body">
+          <form method="post" action="{{ url_for('account.edit_profile') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label class="form-label-sm">Full Name <span class="text-danger">*</span></label>
+              <input class="form-input" type="text" name="name" value="{{ user.name }}" required>
+            </div>
+            <div class="mb-4">
+              <label class="form-label-sm">Email Address</label>
+              <input class="form-input" type="email" value="{{ user.email }}" readonly style="opacity:.6;cursor:not-allowed;">
+              <div class="fs-xs text-muted mt-1">Email changes require identity verification.</div>
+            </div>
+            <button type="submit" class="btn-p">Save Changes</button>
+          </form>
+        </div>
       </div>
     </div>
   </div>

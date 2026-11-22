@@ -1,0 +1,44 @@
+{% extends 'admin/layout_admin.html' %}
+{% block title %}Reviews{% endblock %}
+{% block page_title %}Customer Reviews{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0" style="font-family:var(--flm-font-display);font-size:1.5rem;color:var(--flm-dark);">Reviews</h2>
+    <p class="text-muted fs-sm mb-0">{{ reviews|length }} total reviews</p>
+  </div>
+</div>
+
+<div class="flm-card">
+  <div class="flm-card-body p-0">
+    <table class="flm-table">
+      <thead>
+        <tr><th>Product</th><th>Reviewer</th><th>Rating</th><th>Title</th><th>Date</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for r in reviews %}
+        <tr>
+          <td class="fw-600 fs-sm">{{ r.product_name or '—' }}</td>
+          <td class="fs-sm">{{ r.reviewer }}</td>
+          <td><span class="stars fs-sm">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</span></td>
+          <td class="fs-sm text-muted">{{ r.title or '—' }}</td>
+          <td class="fs-xs text-muted">{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin.delete_review', review_id=r.id) }}"
+                  onsubmit="return confirm('Delete this review?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-flm-outline btn-flm-sm" style="border-color:var(--flm-primary);color:var(--flm-primary);">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No reviews yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

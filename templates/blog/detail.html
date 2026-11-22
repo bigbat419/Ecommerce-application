@@ -1,0 +1,62 @@
+{% extends 'layout.html' %}
+{% block title %}Blog Article{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Blog Article</h1>
+    <ol class="breadcrumb mt-1"><li><a href="{{ url_for('index') }}">Home</a></li><li><a href="{{ url_for('static_pages.blog') }}">Blog</a></li><li>Article</li></ol>
+  </div>
+</div>
+<div class="container pb-5">
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <div style="height:280px;background:linear-gradient(135deg,var(--p) 0%,var(--p-dark) 100%);display:flex;align-items:center;justify-content:center;">
+          <div style="font-size:5rem;opacity:.4;">📰</div>
+        </div>
+        <div class="card-body">
+          <span class="badge badge-primary mb-3">Style Tips</span>
+          <h2 style="font-family:var(--font-d);font-size:1.6rem;font-weight:700;color:var(--dark);letter-spacing:-.02em;">Fashion Trends You Need to Know</h2>
+          <div class="d-flex align-items-center gap-3 mt-2 mb-4 fs-xs text-muted">
+            <span><i class="bi bi-person me-1"></i>Flamingos Editors</span>
+            <span><i class="bi bi-calendar me-1"></i>15 Nov 2026</span>
+            <span><i class="bi bi-clock me-1"></i>5 min read</span>
+          </div>
+          <div style="font-size:.95rem;line-height:1.9;color:var(--dark-2);">
+            <p>Welcome to the Flamingos Blog, your destination for the latest in fashion, style tips, and lifestyle inspiration. Our editors curate the best content to keep you ahead of the trends.</p>
+            <p>From casual streetwear to formal attire, we cover it all. Whether you're looking for outfit ideas, care tips for your clothes, or insight into sustainable fashion, you'll find it here.</p>
+            <p>Stay tuned for regular updates — new articles drop every week. Follow us on social media to never miss a post.</p>
+          </div>
+          <div class="mt-4 pt-4" style="border-top:1px solid var(--grey-200);">
+            <div class="fs-xs text-muted fw-600 text-uppercase mb-2">Tags</div>
+            <div class="d-flex gap-2 flex-wrap">
+              {% for tag in ['Fashion','Style Tips','Trends','2026'] %}
+              <span class="badge badge-primary">{{ tag }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header">Recent Articles</div>
+        <div class="card-body">
+          {% for title in ['10 Must-Have Accessories','How to Layer Outfits','Sustainable Fashion Guide','Building a Capsule Wardrobe'] %}
+          <a href="#" class="d-block fs-sm fw-600 text-dark mb-2" style="text-decoration:none;">{{ title }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card" style="background:var(--p-pale);">
+        <div class="card-body text-center">
+          <i class="bi bi-envelope text-p" style="font-size:2rem;margin-bottom:.8rem;display:block;"></i>
+          <div class="fw-700 fs-sm mb-1">Stay Updated</div>
+          <p class="fs-xs text-muted mb-3">Get weekly style tips delivered to your inbox.</p>
+          <input class="form-input mb-2" type="email" placeholder="Your email">
+          <button class="btn-p btn-sm btn-full">Subscribe</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends 'layout.html' %}
+{% block title %}Returns & Refunds{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Returns & Refunds</h1>
+    <ol class="breadcrumb mt-1"><li><a href="{{ url_for('index') }}">Home</a></li><li>Returns & Refunds</li></ol>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row g-4">
+
+    {# Return form panel #}
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-arrow-counterclockwise me-2 text-p"></i>Request a Return</div>
+        <div class="card-body">
+
+          {# Step indicator #}
+          <div class="steps mb-4" style="max-width:360px;">
+            <div class="step done"><div class="step-circle"><i class="bi bi-check"></i></div><div class="step-label">Order</div></div>
+            <div class="step active"><div class="step-circle">2</div><div class="step-label">Select Item</div></div>
+            <div class="step"><div class="step-circle">3</div><div class="step-label">Confirm</div></div>
+          </div>
+
+          {% if current_user.is_authenticated %}
+          <form onsubmit="handleReturn(event)">
+            <div class="mb-3">
+              <label class="form-label-sm">Select Order</label>
+              <select class="form-input">
+                <option value="">Choose an order…</option>
+                <option>Back to Orders — select from My Account</option>
+              </select>
+              <div class="mt-1 fs-xs text-muted">
+                <a href="{{ url_for('account.orders') }}" class="text-p fw-600">View your orders →</a>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label-sm">Item to Return</label>
+              <div class="card" style="border:1.5px solid var(--grey-200);">
+                <div class="card-body d-flex align-items-center gap-3">
+                  <div style="width:50px;height:50px;border-radius:8px;background:var(--grey-100);display:flex;align-items:center;justify-content:center;color:var(--grey-400);flex-shrink:0;"><i class="bi bi-image"></i></div>
+                  <div class="flex-grow-1">
+                    <div class="fw-600 fs-sm text-muted">Select an order above to see items</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label-sm">Reason for Return <span class="text-danger">*</span></label>
+              <select class="form-input" required>
+                <option value="">Select a reason…</option>
+                {% for r in ['Wrong item received','Item damaged / defective','Item not as described','Changed my mind','Wrong size / fit','Other'] %}
+                <option>{{ r }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <button type="submit" class="btn-p" id="returnBtn">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>Request Return
+            </button>
+          </form>
+          {% else %}
+          <div class="text-center py-4">
+            <i class="bi bi-person-lock text-muted" style="font-size:3rem;"></i>
+            <p class="text-muted mt-2 mb-3 fs-sm">Sign in to submit a return request.</p>
+            <a href="{{ url_for('auth.login') }}" class="btn-p">Sign In</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# Policy info #}
+    <div class="col-lg-5">
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-info-circle me-2 text-p"></i>Return Policy</div>
+        <div class="card-body">
+          {% for icon, title, body in [
+            ('bi-calendar-check','30-Day Window','Return any item within 30 days of delivery for a full refund.'),
+            ('bi-box','Original Packaging','Items must be unused and in original packaging.'),
+            ('bi-currency-exchange','Refund Timeline','Refunds are processed within 5–7 business days.'),
+            ('bi-truck','Free Returns','Return shipping is free on our standard return service.'),
+          ] %}
+          <div class="d-flex gap-3 mb-3 {% if not loop.last %}pb-3{% endif %}" style="{{ 'border-bottom:1px solid var(--grey-200);' if not loop.last }}">
+            <div style="width:34px;height:34px;border-radius:6px;background:var(--p-pale);display:flex;align-items:center;justify-content:center;color:var(--p);flex-shrink:0;"><i class="bi {{ icon }}"></i></div>
+            <div>
+              <div class="fw-600 fs-sm">{{ title }}</div>
+              <div class="fs-xs text-muted mt-1">{{ body }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--p-pale);border-color:var(--p);">
+        <div class="card-body fs-sm">
+          <div class="fw-700 text-p mb-1"><i class="bi bi-question-circle me-1"></i>Need help?</div>
+          <p class="text-muted mb-2">Can't find what you're looking for? Our support team is ready to help.</p>
+          <a href="{{ url_for('static_pages.contact') }}" class="btn-p btn-sm">Contact Support</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function handleReturn(e){
+  e.preventDefault();
+  const btn=document.getElementById('returnBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Submitting…';
+  setTimeout(()=>{
+    btn.disabled=false;
+    btn.innerHTML='<i class="bi bi-check-circle me-1"></i>Return Requested!';
+    btn.style.background='var(--success)';
+  },1200);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends 'admin/layout_admin.html' %}
+{% block title %}Brands{% endblock %}
+{% block page_title %}Brand Management{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0" style="font-family:var(--font-d);font-size:1.5rem;color:var(--dark);">Brands</h2>
+    <p class="text-muted fs-sm mb-0">{{ brands|length }} brand{% if brands|length != 1 %}s{% endif %}</p>
+  </div>
+  <button class="btn-p" onclick="document.getElementById('brandModal').style.display='flex'">
+    <i class="bi bi-plus-circle me-1"></i>New Brand
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-body-flush">
+    <table class="flm-table">
+      <thead><tr><th style="width:56px;">Logo</th><th>Name</th><th>Slug</th><th>Website</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for b in brands %}
+        <tr>
+          <td>
+            {% if b.logo %}
+              <img src="{{ url_for('static', filename=b.logo) }}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;border:1px solid var(--grey-200);">
+            {% else %}
+              <div style="width:40px;height:40px;border-radius:6px;background:var(--p-pale);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--p);font-size:.85rem;">{{ b.name[0] }}</div>
+            {% endif %}
+          </td>
+          <td class="fw-600 fs-sm">{{ b.name }}</td>
+          <td class="fs-xs text-muted font-monospace">{{ b.slug }}</td>
+          <td class="fs-xs text-muted">{{ b.website or '—' }}</td>
+          <td><span class="badge {{ 'badge-success' if b.active else 'badge-grey' }}">{{ 'Active' if b.active else 'Hidden' }}</span></td>
+          <td>
+            <div class="d-flex gap-1">
+              <button class="btn-p btn-sm" onclick="editBrand({{ b.id }}, '{{ b.name|replace("'","\\'")|e }}', '{{ b.website or '' }}', {{ b.active }})">Edit</button>
+              <form method="post" action="{{ url_for('admin.delete_brand', brand_id=b.id) }}" onsubmit="return confirm('Delete brand?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-outline btn-sm" style="border-color:var(--danger);color:var(--danger);"><i class="bi bi-trash3"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No brands yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Modal #}
+<div id="brandModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center;">
+  <div class="card" style="width:100%;max-width:500px;margin:1rem;">
+    <div class="card-header">
+      <span id="brandModalTitle">New Brand</span>
+      <button onclick="document.getElementById('brandModal').style.display='none'" class="border-0 bg-transparent fs-4 text-muted" style="line-height:1;">&times;</button>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('admin.save_brand') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" id="brandId">
+        <div class="mb-3">
+          <label class="form-label-sm">Brand Name <span class="text-danger">*</span></label>
+          <input class="form-input" type="text" name="name" id="brandName" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label-sm">Website URL</label>
+          <input class="form-input" type="url" name="website" id="brandWebsite" placeholder="https://example.com">
+        </div>
+        <div class="mb-3">
+          <label class="form-label-sm">Description</label>
+          <textarea class="form-input" name="description" rows="2"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label-sm">Logo Image</label>
+          <input class="form-control form-control-sm" type="file" name="logo" accept="image/*">
+        </div>
+        <label style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;cursor:pointer;margin-bottom:1rem;">
+          <input type="checkbox" name="active" id="brandActive" checked style="accent-color:var(--p);"> Active
+        </label>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn-p">Save Brand</button>
+          <button type="button" class="btn-outline" onclick="document.getElementById('brandModal').style.display='none'">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function editBrand(id, name, website, active) {
+  document.getElementById('brandId').value = id;
+  document.getElementById('brandName').value = name;
+  document.getElementById('brandWebsite').value = website;
+  document.getElementById('brandActive').checked = !!active;
+  document.getElementById('brandModalTitle').textContent = 'Edit Brand';
+  document.getElementById('brandModal').style.display = 'flex';
+}
+</script>
+{% endblock %}

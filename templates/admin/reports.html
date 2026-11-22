@@ -1,0 +1,175 @@
+{% extends 'admin/layout_admin.html' %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+{# Period selector #}
+<div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+  <span class="fs-sm fw-600 text-muted">Period:</span>
+  {% for d, label in [(7,'7 days'),(30,'30 days'),(90,'90 days'),(365,'1 year')] %}
+  <a href="{{ url_for('admin.reports', period=d) }}"
+     class="{{ 'btn-p' if period==d else 'btn-outline' }} btn-sm">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{# KPI cards #}
+<div class="row g-3 mb-4">
+  {% for icon, label, val, color in [
+    ('bi-currency-exchange','Revenue', '₦'~"{:,.0f}".format(period_revenue), '#2B4EFF'),
+    ('bi-receipt','Orders', period_orders, '#22C55E'),
+    ('bi-people','Active Customers', active_customers, '#F59E0B'),
+    ('bi-graph-up','Avg Order Value', '₦'~"{:,.0f}".format(avg_order), '#8B5CF6'),
+  ] %}
+  <div class="col-sm-6 col-xl-3">
+    <div class="admin-stat">
+      <div class="admin-stat-icon" style="background:{{ color }}15;color:{{ color }};"><i class="bi {{ icon }}"></i></div>
+      <div>
+        <div class="admin-stat-val">{{ val }}</div>
+        <div class="admin-stat-lbl">{{ label }} ({{ period }}d)</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# Charts row #}
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-graph-up me-2 text-p"></i>Daily Revenue</div>
+      <div class="card-body"><canvas id="revChart" height="90"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-pie-chart me-2 text-p"></i>Orders by Status</div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="statusChart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Tables row #}
+<div class="row g-3 mb-4">
+  {# Top products #}
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-trophy me-2 text-p"></i>Top Products</div>
+      <div class="card-body-flush">
+        <table class="flm-table">
+          <thead><tr><th>#</th><th>Product</th><th class="text-center">Sold</th><th class="text-end">Revenue</th></tr></thead>
+          <tbody>
+            {% for p in top_products %}
+            <tr>
+              <td class="fw-700 text-muted fs-xs">{{ loop.index }}</td>
+              <td class="fw-600 fs-sm">{{ p.name }}</td>
+              <td class="text-center fs-sm">{{ p.sold }}</td>
+              <td class="text-end fw-700 text-p fs-sm">₦{{ "{:,.0f}".format(p.revenue|float) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# Top customers #}
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-people me-2 text-p"></i>Top Customers</div>
+      <div class="card-body-flush">
+        <table class="flm-table">
+          <thead><tr><th>#</th><th>Customer</th><th class="text-center">Orders</th><th class="text-end">Spent</th></tr></thead>
+          <tbody>
+            {% for c in top_customers %}
+            <tr>
+              <td class="fw-700 text-muted fs-xs">{{ loop.index }}</td>
+              <td>
+                <div class="fw-600 fs-sm">{{ c.name }}</div>
+                <div class="fs-xs text-muted">{{ c.email }}</div>
+              </td>
+              <td class="text-center fs-sm">{{ c.orders }}</td>
+              <td class="text-end fw-700 text-p fs-sm">₦{{ "{:,.0f}".format(c.spent|float) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Category breakdown #}
+{% if cat_data %}
+<div class="card mb-4">
+  <div class="card-header"><i class="bi bi-bar-chart me-2 text-p"></i>Sales by Category</div>
+  <div class="card-body">
+    {% set max_sold = cat_data[0].sold %}
+    {% for c in cat_data %}
+    <div class="d-flex align-items-center gap-3 mb-2">
+      <div style="width:120px;font-size:.82rem;font-weight:600;color:var(--dark);flex-shrink:0;">{{ c.category or 'Uncategorised' }}</div>
+      <div style="flex:1;height:20px;background:var(--grey-200);border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:{{ [(c.sold / (max_sold or 1) * 100)|int, 100]|min }}%;background:var(--p);border-radius:4px;transition:.4s;"></div>
+      </div>
+      <div style="width:50px;text-align:right;font-size:.82rem;font-weight:700;color:var(--p);">{{ c.sold }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Revenue chart
+new Chart(document.getElementById('revChart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: {{ labels | tojson }},
+    datasets: [{
+      label: 'Revenue (₦)',
+      data: {{ rev_data | tojson }},
+      borderColor: '#2B4EFF',
+      backgroundColor: 'rgba(43,78,255,.07)',
+      borderWidth: 2.5,
+      pointBackgroundColor: '#2B4EFF',
+      pointRadius: 3,
+      fill: true,
+      tension: 0.4,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { font: { size: 11 }, callback: v => '₦' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,.04)' } },
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// Status doughnut
+const statusRows = {{ status_rows | tojson }};
+const statusLabels = statusRows.map(r => r.status.charAt(0).toUpperCase() + r.status.slice(1));
+const statusData   = statusRows.map(r => r.cnt);
+const statusColors = { paid:'#22C55E', pending:'#F59E0B', cancelled:'#EF4444', shipped:'#2B4EFF', delivered:'#8B5CF6' };
+const bgColors = statusRows.map(r => statusColors[r.status] || '#94A3B8');
+new Chart(document.getElementById('statusChart').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: statusLabels,
+    datasets: [{ data: statusData, backgroundColor: bgColors, borderWidth: 0 }]
+  },
+  options: {
+    cutout: '70%',
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } } }
+  }
+});
+</script>
+{% endblock %}

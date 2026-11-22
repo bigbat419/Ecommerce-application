@@ -1,0 +1,105 @@
+{% extends 'layout.html' %}
+{% block title %}FAQ — Frequently Asked Questions{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Frequently Asked Questions</h1>
+    <ol class="breadcrumb mt-1"><li><a href="{{ url_for('index') }}">Home</a></li><li>FAQ</li></ol>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  {# Search #}
+  <div class="text-center mb-5">
+    <p class="text-muted fs-sm mb-3">Can't find your answer? <a href="{{ url_for('static_pages.contact') }}" class="text-p fw-600">Contact us</a> and we'll help.</p>
+    <div class="d-flex justify-content-center gap-2" style="max-width:440px;margin:0 auto;">
+      <input class="form-input" id="faqSearch" type="text" placeholder="Search questions…" oninput="filterFaq(this.value)" style="flex:1;">
+    </div>
+  </div>
+
+  {% set sections = [
+    ('bi-bag','Orders & Shopping',[
+      ('How do I place an order?','Browse our products, add items to your cart, then proceed to checkout. You can pay securely via Paystack using card, bank transfer, or USSD.'),
+      ('Can I modify my order after placing it?','Orders can be modified within 1 hour of placement. Contact our support team immediately at support@flamingos.com.'),
+      ('How do I track my order?','Log in to your account, go to My Orders, and click "Track" on the order you want to follow. You\'ll see a live status timeline.'),
+      ('What happens if an item is out of stock?','If an item goes out of stock after you order, we\'ll contact you within 24 hours to offer a refund or alternative.'),
+    ]),
+    ('bi-truck','Shipping & Delivery',[
+      ('How long does delivery take?','Standard delivery takes 3–5 business days. Express delivery is available next day. Same-day delivery is available in Lagos.'),
+      ('How much is shipping?','Standard delivery costs ₦1,500. Orders above ₦25,000 qualify for free standard delivery. Express and same-day delivery have higher fees.'),
+      ('Do you ship outside Nigeria?','Currently we only ship within Nigeria. International shipping is coming soon.'),
+      ('Can I change my delivery address after ordering?','Address changes are possible only before the order is dispatched. Contact support as soon as possible.'),
+    ]),
+    ('bi-arrow-counterclockwise','Returns & Refunds',[
+      ('What is your return policy?','We offer hassle-free returns within 30 days of delivery. Items must be unused and in their original packaging.'),
+      ('How do I request a return?','Go to My Orders, select the order, and click "Request Return". Fill in the reason and we\'ll process it within 24 hours.'),
+      ('When will I receive my refund?','Refunds are processed within 5–7 business days after we receive the returned item.'),
+      ('Are there items that cannot be returned?','Personalised, intimate, or hygiene-sealed items cannot be returned once opened.'),
+    ]),
+    ('bi-credit-card','Payments',[
+      ('What payment methods do you accept?','We accept Visa, Mastercard, Verve, bank transfer, and USSD via Paystack. All transactions are encrypted.'),
+      ('Is it safe to pay on Flamingos?','Yes. All payments are processed by Paystack, a PCI-DSS compliant payment gateway. We never store your card details.'),
+      ('Can I pay on delivery?','Cash on delivery is not currently available. We\'re working on adding this option.'),
+      ('Why was my payment declined?','Check that your card has sufficient funds and 3D Secure is enabled. Contact your bank if the issue persists.'),
+    ]),
+    ('bi-person','Account & Profile',[
+      ('How do I create an account?','Click "Register" at the top of the page, enter your name, email, and a password. It\'s free and takes under a minute.'),
+      ('I forgot my password. What do I do?','Click "Forgot Password" on the login page and we\'ll send a reset link to your email.'),
+      ('Can I shop without creating an account?','Currently an account is required for checkout. Guest checkout is on our roadmap.'),
+      ('How do I earn Flamingo Points?','You earn 1 point for every ₦100 spent. Points can be redeemed for discounts on future orders.'),
+    ]),
+  ] %}
+
+  <div class="row g-4" id="faqContainer">
+    {% for icon, section_title, faqs in sections %}
+    <div class="col-12 faq-section">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <div style="width:36px;height:36px;border-radius:8px;background:var(--p-pale);display:flex;align-items:center;justify-content:center;color:var(--p);"><i class="bi {{ icon }}"></i></div>
+        <h3 style="font-family:var(--font-d);font-size:1.1rem;font-weight:700;color:var(--dark);margin:0;">{{ section_title }}</h3>
+      </div>
+      <div class="accordion" id="acc-{{ loop.index }}">
+        {% for question, answer in faqs %}
+        <div class="accordion-item faq-item border-0 mb-2 rounded-3 overflow-hidden shadow-sm">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed fw-600 fs-sm" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#faq-{{ loop.index }}-{{ loop.index0 }}"
+                    style="background:#fff;color:var(--dark);border-radius:var(--radius)!important;">
+              {{ question }}
+            </button>
+          </h2>
+          <div id="faq-{{ loop.index }}-{{ loop.index0 }}" class="accordion-collapse collapse">
+            <div class="accordion-body fs-sm text-muted" style="background:#fff;padding-top:0;">
+              {{ answer }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# Still need help CTA #}
+  <div class="text-center mt-5 p-4 rounded-3" style="background:var(--p-pale);">
+    <i class="bi bi-headset text-p" style="font-size:2.5rem;"></i>
+    <h4 style="font-family:var(--font-d);color:var(--dark);margin:.8rem 0 .4rem;">Still need help?</h4>
+    <p class="text-muted fs-sm mb-3">Our support team is available Mon–Sat, 8am–8pm.</p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="{{ url_for('static_pages.contact') }}" class="btn-p">Contact Support</a>
+      <a href="{{ url_for('static_pages.help') }}" class="btn-outline">Help Centre</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function filterFaq(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.faq-item').forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

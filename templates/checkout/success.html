@@ -1,11 +1,44 @@
-{% extends "layout.html" %}
-{% block title %}Payment Successful{% endblock %}
+{% extends 'layout.html' %}
+{% block title %}Order Placed Successfully{% endblock %}
 {% block content %}
-<div class="text-center py-5">
-  <div class="mb-3 text-success" style="font-size:4rem;">&#10003;</div>
-  <h3>Payment Successful</h3>
-  <p class="text-muted">Your order has been placed and is being processed.</p>
-  <a href="{{ url_for('account.orders') }}" class="btn btn-primary me-2">View Orders</a>
-  <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-secondary">Continue Shopping</a>
+<div class="container py-5">
+  <div class="success-page">
+    {# steps — all done #}
+    <div class="steps mb-4" style="max-width:420px;">
+      {% for lbl in ['Cart','Shipping','Payment','Review'] %}
+      <div class="step done">
+        <div class="step-circle"><i class="bi bi-check"></i></div>
+        <div class="step-label">{{ lbl }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="success-icon" style="animation:pop .5s ease;">✅</div>
+    <h2>Order Placed Successfully!</h2>
+    <p class="text-muted fs-sm" style="max-width:420px;margin:0 auto .5rem;">
+      Thank you for your purchase. Your order is being processed and you'll receive a confirmation email shortly.
+    </p>
+    {% if order_ref %}
+    <div class="order-ref">Order #{{ order_ref }}</div>
+    {% endif %}
+
+    <div class="d-flex flex-wrap gap-3 justify-content-center mt-4">
+      <a href="{{ url_for('account.orders') }}" class="btn-p btn-lg">
+        <i class="bi bi-box-seam me-2"></i>View Order
+      </a>
+      <a href="{{ url_for('products.list_products') }}" class="btn-outline btn-lg">
+        Continue Shopping
+      </a>
+    </div>
+
+    <div class="mt-5 p-3 rounded-3 text-center"
+         style="background:var(--p-pale);border:1px dashed var(--p);max-width:380px;">
+      <div class="fs-sm fw-600 text-p mb-1">🦩 Thank you for shopping with Flamingos!</div>
+      <div class="fs-xs text-muted">Tag us @FlamingosStyle on social media</div>
+    </div>
+  </div>
 </div>
+<style>
+@keyframes pop{0%{transform:scale(.6);opacity:0}80%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+</style>
 {% endblock %}

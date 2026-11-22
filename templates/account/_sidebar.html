@@ -1,0 +1,47 @@
+{# Account sidebar — wireframe screen 9 style #}
+<div class="acct-sidebar">
+  {# Avatar + name #}
+  <div class="text-center p-3 mb-3">
+    <div class="acct-avatar mx-auto mb-2">{{ current_user.name[0].upper() }}</div>
+    <div class="fw-700 fs-sm" style="color:var(--dark);">{{ current_user.name }}</div>
+    <div class="fs-xs text-muted">{{ current_user.email }}</div>
+  </div>
+
+  <nav class="acct-nav">
+    <a href="{{ url_for('account.profile') }}"
+       class="acct-nav-link {{ 'active' if request.endpoint == 'account.profile' }}">
+      <i class="bi bi-speedometer2 nav-icon"></i>Dashboard
+    </a>
+    <a href="{{ url_for('account.orders') }}"
+       class="acct-nav-link {{ 'active' if request.endpoint in ['account.orders','account.order_detail','account.track_order','account.request_return'] }}">
+      <i class="bi bi-box-seam nav-icon"></i>My Orders
+    </a>
+    <a href="{{ url_for('wishlist.list_wishlist') }}"
+       class="acct-nav-link {{ 'active' if request.endpoint == 'wishlist.list_wishlist' }}">
+      <i class="bi bi-heart nav-icon"></i>Wishlist
+    </a>
+    <a href="{{ url_for('account.rewards') }}"
+       class="acct-nav-link {{ 'active' if request.endpoint == 'account.rewards' }}">
+      <i class="bi bi-stars nav-icon"></i>Rewards
+    </a>
+    <a href="{{ url_for('account.addresses') }}"
+       class="acct-nav-link {{ 'active' if request.endpoint == 'account.addresses' }}">
+      <i class="bi bi-geo-alt nav-icon"></i>Addresses
+    </a>
+    <a href="{{ url_for('account.edit_profile') }}"
+       class="acct-nav-link {{ 'active' if request.endpoint == 'account.edit_profile' }}">
+      <i class="bi bi-person nav-icon"></i>Profile
+    </a>
+    <a href="{{ url_for('account.change_password') }}"
+       class="acct-nav-link {{ 'active' if request.endpoint == 'account.change_password' }}">
+      <i class="bi bi-lock nav-icon"></i>Password
+    </a>
+    <a href="{{ url_for('static_pages.notifications') }}"
+       class="acct-nav-link {{ 'active' if request.endpoint == 'static_pages.notifications' }}">
+      <i class="bi bi-bell nav-icon"></i>Notifications
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="acct-nav-link" style="color:var(--danger);">
+      <i class="bi bi-box-arrow-right nav-icon"></i>Logout
+    </a>
+  </nav>
+</div>

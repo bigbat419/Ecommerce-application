@@ -1,0 +1,82 @@
+{% extends 'layout.html' %}
+{% block title %}About Us{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>About Flamingos</h1>
+    <ol class="breadcrumb mt-1"><li><a href="{{ url_for('index') }}">Home</a></li><li>About Us</li></ol>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  {# Hero about section #}
+  <div class="row g-5 align-items-center mb-5">
+    <div class="col-lg-6">
+      <div class="section-eyebrow">About Flamingos</div>
+      <h2 style="font-family:var(--font-d);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;color:var(--dark);letter-spacing:-.02em;margin-bottom:1rem;">
+        We are committed to delivering the best shopping experience.
+      </h2>
+      <p class="text-muted" style="font-size:.95rem;line-height:1.8;">
+        Founded in 2024, Flamingos was born from a passion for making quality fashion accessible to everyone.
+        We believe great style shouldn't cost a fortune, and excellent service should be the standard — not the exception.
+      </p>
+      <p class="text-muted" style="font-size:.95rem;line-height:1.8;margin-top:.8rem;">
+        From everyday essentials to statement pieces, our curated collection spans thousands of products
+        across fashion, accessories, and lifestyle — all backed by our commitment to quality and unbeatable value.
+      </p>
+      <a href="{{ url_for('products.list_products') }}" class="btn-p btn-lg mt-3">
+        <i class="bi bi-bag me-2"></i>Our Mission
+      </a>
+    </div>
+    <div class="col-lg-6">
+      <div style="background:linear-gradient(135deg,var(--p) 0%,var(--p-dark) 100%);border-radius:16px;padding:2.5rem;color:#fff;text-align:center;">
+        <div style="font-size:4rem;margin-bottom:1rem;">🦩</div>
+        <div style="font-family:var(--font-d);font-size:1.5rem;font-weight:700;margin-bottom:.5rem;">Flamingos</div>
+        <div style="color:rgba(255,255,255,.75);font-size:.9rem;">Style That Speaks. Quality That Lasts.</div>
+      </div>
+    </div>
+  </div>
+
+  {# Stats #}
+  <div class="row g-3 mb-5">
+    {% for val, label in [('10,000+','Happy Customers'),('500+','Products'),('50+','Brands'),('4.9★','Average Rating')] %}
+    <div class="col-6 col-md-3">
+      <div class="card text-center">
+        <div class="card-body py-4">
+          <div style="font-family:var(--font-d);font-size:1.8rem;font-weight:700;color:var(--p);">{{ val }}</div>
+          <div class="text-muted fs-sm mt-1">{{ label }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# Values #}
+  <div class="section-head mb-4">
+    <div>
+      <div class="section-eyebrow">Why Choose Us</div>
+      <h2>Our Core Values</h2>
+    </div>
+  </div>
+  <div class="row g-3 mb-5">
+    {% for icon, title, desc, color in [
+      ('bi-shield-check','Quality First','Every product is carefully curated and quality-checked before listing.','#2B4EFF'),
+      ('bi-people','Customer Centric','Our customers are at the heart of every decision we make.','#22C55E'),
+      ('bi-currency-exchange','Fair Pricing','Premium products at prices that make sense for your budget.','#F59E0B'),
+      ('bi-truck','Fast Delivery','Get your orders delivered quickly and reliably across Nigeria.','#EF4444'),
+    ] %}
+    <div class="col-sm-6 col-lg-3">
+      <div class="card h-100 text-center">
+        <div class="card-body py-4">
+          <div style="width:56px;height:56px;border-radius:50%;background:{{ color }}15;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.3rem;color:{{ color }};"><i class="bi {{ icon }}"></i></div>
+          <div class="fw-700 mb-2" style="color:var(--dark);">{{ title }}</div>
+          <div class="text-muted fs-sm">{{ desc }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

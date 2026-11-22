@@ -1,54 +1,94 @@
 {% extends 'layout.html' %}
 {% block title %}Order #{{ order.id }}{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h2>Order #{{ order.id }}</h2>
-  <a href="{{ url_for('account.orders') }}" class="btn btn-outline-secondary btn-sm">← Back to Orders</a>
+<div class="page-header">
+  <div class="container">
+    <h1>Order #ORD{{ '%06d'|format(order.id) }}</h1>
+    <ol class="breadcrumb mt-1"><li><a href="{{ url_for('index') }}">Home</a></li><li><a href="{{ url_for('account.orders') }}">Orders</a></li><li>#{{ order.id }}</li></ol>
+  </div>
 </div>
+<div class="container pb-5">
+  <div class="d-flex gap-4 align-items-start flex-column flex-lg-row">
+    {% include 'account/_sidebar.html' %}
+    <div class="flex-grow-1">
 
-<div class="row mb-4">
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-body">
-        <p class="mb-1"><strong>Status:</strong>
-          <span class="badge bg-{{ 'success' if order.status == 'paid' else 'warning' if order.status == 'pending' else 'secondary' }}">
-            {{ order.status }}
-          </span>
-        </p>
-        <p class="mb-1"><strong>Date:</strong> {{ order.created_at.strftime('%d %b %Y %H:%M') if order.created_at else '' }}</p>
-        <p class="mb-0"><strong>Total:</strong> ₦{{ "%.2f"|format(order.total|float) }}</p>
+      {# Meta row #}
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row g-3">
+            {% for label, val in [
+              ('Order Date', order.created_at.strftime('%d %b %Y, %H:%M') if order.created_at else '—'),
+              ('Reference', order.paystack_reference or '—'),
+            ] %}
+            <div class="col-6 col-md-3">
+              <div class="fs-xs text-muted fw-600 text-uppercase mb-1">{{ label }}</div>
+              <div class="fw-600 fs-sm">{{ val }}</div>
+            </div>
+            {% endfor %}
+            <div class="col-6 col-md-3">
+              <div class="fs-xs text-muted fw-600 text-uppercase mb-1">Status</div>
+              <span class="badge {{ 'badge-success' if order.status=='paid' else 'badge-warning' if order.status=='pending' else 'badge-info' if order.status=='shipped' else 'badge-grey' }}">
+                {{ order.status|capitalize }}
+              </span>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="fs-xs text-muted fw-600 text-uppercase mb-1">Total</div>
+              <div class="fw-700 text-p" style="font-size:1.1rem;">₦{{ "%.0f"|format(order.total|float) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Items #}
+      <div class="card">
+        <div class="card-header"><i class="bi bi-list-ul me-2 text-p"></i>Items Ordered</div>
+        <div class="card-body-flush">
+          <table class="flm-table">
+            <thead><tr><th>Product</th><th class="text-center">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Subtotal</th></tr></thead>
+            <tbody>
+              {% for item in items %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    {% if item.image %}
+                      <img src="{{ url_for('static', filename=item.image) }}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--grey-200);">
+                    {% else %}
+                      <div style="width:44px;height:44px;background:var(--grey-100);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--grey-400);font-size:.9rem;"><i class="bi bi-image"></i></div>
+                    {% endif %}
+                    <span class="fw-600 fs-sm">{{ item.name or 'Product removed' }}</span>
+                  </div>
+                </td>
+                <td class="text-center">{{ item.quantity }}</td>
+                <td class="text-end">₦{{ "%.0f"|format(item.price|float) }}</td>
+                <td class="text-end fw-700">₦{{ "%.0f"|format(item.price|float * item.quantity|int) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr style="background:var(--grey-100);">
+                <td colspan="3" class="text-end fw-700">Order Total</td>
+                <td class="text-end fw-700 text-p" style="font-size:1.05rem;">₦{{ "%.0f"|format(order.total|float) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="mt-4 d-flex gap-3 flex-wrap">
+        <a href="{{ url_for('account.orders') }}" class="btn-outline btn-sm">
+          <i class="bi bi-arrow-left me-1"></i>Back to Orders
+        </a>
+        <a href="{{ url_for('account.track_order', order_id=order.id) }}" class="btn-p btn-sm">
+          <i class="bi bi-geo-alt me-1"></i>Track Order
+        </a>
+        {% if order.status == 'paid' %}
+        <a href="{{ url_for('account.request_return', order_id=order.id) }}" class="btn-outline btn-sm">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Request Return
+        </a>
+        <a href="#" class="btn-p btn-sm"><i class="bi bi-download me-1"></i>Invoice</a>
+        {% endif %}
       </div>
     </div>
   </div>
 </div>
-
-<h5>Items</h5>
-<table class="table table-bordered">
-  <thead class="table-light">
-    <tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th></tr>
-  </thead>
-  <tbody>
-    {% for item in items %}
-    <tr>
-      <td>
-        <div class="d-flex align-items-center gap-2">
-          {% if item.image %}
-            <img src="{{ url_for('static', filename=item.image) }}" style="width:40px;height:40px;object-fit:cover;" class="rounded">
-          {% endif %}
-          {{ item.name or 'Deleted product' }}
-        </div>
-      </td>
-      <td>₦{{ "%.2f"|format(item.price|float) }}</td>
-      <td>{{ item.quantity }}</td>
-      <td>₦{{ "%.2f"|format(item.price|float * item.quantity) }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-  <tfoot>
-    <tr class="fw-bold">
-      <td colspan="3" class="text-end">Total</td>
-      <td>₦{{ "%.2f"|format(order.total|float) }}</td>
-    </tr>
-  </tfoot>
-</table>
 {% endblock %}

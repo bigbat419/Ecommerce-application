@@ -1,41 +1,51 @@
-{% extends 'layout.html' %}
+{% extends 'admin/layout_admin.html' %}
 {% block title %}Orders{% endblock %}
+{% block page_title %}Order Management{% endblock %}
 {% block content %}
-<h2 class="mb-4">All Orders</h2>
-<div class="table-responsive">
-  <table class="table table-hover">
-    <thead class="table-light">
-      <tr><th>#</th><th>Customer</th><th>Total</th><th>Status</th><th>Reference</th><th>Date</th><th>Actions</th></tr>
-    </thead>
-    <tbody>
-      {% for o in orders %}
-      <tr>
-        <td>{{ o.id }}</td>
-        <td>{{ o.name }}</td>
-        <td>₦{{ "%.2f"|format(o.total|float) }}</td>
-        <td>
-          <span class="badge bg-{{ 'success' if o.status=='paid' else 'warning' if o.status=='pending' else 'secondary' }}">
-            {{ o.status }}
-          </span>
-        </td>
-        <td><small class="text-muted">{{ o.paystack_reference or '—' }}</small></td>
-        <td>{{ o.created_at.strftime('%d %b %Y') if o.created_at else '' }}</td>
-        <td>
-          <form method="post" action="{{ url_for('admin.update_order', order_id=o.id) }}" class="d-flex gap-1">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <select name="status" class="form-select form-select-sm" style="width:120px;">
-              {% for s in ['pending','paid','shipped','delivered','cancelled'] %}
-                <option value="{{ s }}" {{ 'selected' if o.status == s }}>{{ s }}</option>
-              {% endfor %}
-            </select>
-            <button class="btn btn-sm btn-outline-primary" type="submit">Update</button>
-          </form>
-        </td>
-      </tr>
-      {% else %}
-      <tr><td colspan="7" class="text-center text-muted">No orders yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0" style="font-family:var(--flm-font-display);font-size:1.5rem;color:var(--flm-dark);">Orders</h2>
+    <p class="text-muted fs-sm mb-0">{{ orders|length }} total orders</p>
+  </div>
+</div>
+
+<div class="flm-card">
+  <div class="flm-card-body p-0">
+    <table class="flm-table">
+      <thead>
+        <tr><th>#</th><th>Customer</th><th>Total</th><th>Status</th><th>Reference</th><th>Date</th><th>Update</th></tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td class="fw-700">#{{ o.id }}</td>
+          <td class="fw-600">{{ o.name }}</td>
+          <td class="fw-600" style="color:var(--flm-primary);">₦{{ "%.0f"|format(o.total|float) }}</td>
+          <td>
+            <span class="flm-badge {% if o.status=='paid' %}flm-badge-success{% elif o.status=='pending' %}flm-badge-warning{% elif o.status=='shipped' %}flm-badge-info{% elif o.status=='cancelled' %}flm-badge-danger{% else %}flm-badge-grey{% endif %}">
+              {{ o.status|capitalize }}
+            </span>
+          </td>
+          <td class="fs-xs text-muted font-monospace">{{ o.paystack_reference or '—' }}</td>
+          <td class="fs-xs text-muted">{{ o.created_at.strftime('%d %b %Y, %H:%M') if o.created_at else '—' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin.update_order', order_id=o.id) }}" class="d-flex gap-1 align-items-center">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <select name="status" class="form-select form-select-sm" style="width:120px;font-size:.78rem;">
+                {% for s in ['pending','paid','shipped','delivered','cancelled'] %}
+                <option value="{{ s }}" {{ 'selected' if o.status==s }}>{{ s|capitalize }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn-flm btn-flm-sm"><i class="bi bi-check2"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No orders yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

@@ -1,46 +1,95 @@
-{% extends 'layout.html' %}
+{% extends 'admin/layout_admin.html' %}
 {% block title %}Add Product{% endblock %}
+{% block page_title %}Add New Product{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-7">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>Add Product</h2>
-      <a href="{{ url_for('admin.products') }}" class="btn btn-outline-secondary btn-sm">← Back</a>
-    </div>
-    <div class="card">
-      <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="mb-3">
-            <label class="form-label">Name <span class="text-danger">*</span></label>
-            <input class="form-control" name="name" required>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Price (₦) <span class="text-danger">*</span></label>
-              <input class="form-control" name="price" type="number" step="0.01" min="0" required>
+
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{{ url_for('admin.products') }}" class="btn-flm-outline btn-flm-sm">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <h2 class="mb-0" style="font-family:var(--flm-font-display);font-size:1.4rem;color:var(--flm-dark);">Add Product</h2>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('admin.add_product') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="flm-card mb-4">
+        <div class="flm-card-header"><i class="bi bi-info-circle me-2 text-flm"></i>Basic Information</div>
+        <div class="flm-card-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="flm-label">Product Name <span class="text-flm">*</span></label>
+              <input class="flm-input" type="text" name="name" required placeholder="e.g. Classic Linen Shirt">
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Stock <span class="text-danger">*</span></label>
-              <input class="form-control" name="stock" type="number" min="0" required>
+            <div class="col-sm-6">
+              <label class="flm-label">Category</label>
+              <input class="flm-input" type="text" name="category" list="catList" placeholder="Men, Women, Accessories…">
+              <datalist id="catList">
+                {% for c in ['Men','Women','Kids','Accessories','Footwear'] %}
+                  <option value="{{ c }}">
+                {% endfor %}
+              </datalist>
+            </div>
+            <div class="col-sm-3">
+              <label class="flm-label">Price (₦) <span class="text-flm">*</span></label>
+              <input class="flm-input" type="number" name="price" step="0.01" min="0" required placeholder="5000">
+            </div>
+            <div class="col-sm-3">
+              <label class="flm-label">Stock Qty <span class="text-flm">*</span></label>
+              <input class="flm-input" type="number" name="stock" min="0" required placeholder="50">
+            </div>
+            <div class="col-12">
+              <label class="flm-label">Description</label>
+              <textarea class="flm-input" name="description" rows="4"
+                        placeholder="Describe the product — material, fit, care instructions…"></textarea>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Category</label>
-            <input class="form-control" name="category" placeholder="e.g. Electronics, Clothing">
+        </div>
+      </div>
+
+      <div class="flm-card mb-4">
+        <div class="flm-card-header"><i class="bi bi-image me-2 text-flm"></i>Product Image</div>
+        <div class="flm-card-body">
+          <label class="flm-label">Upload Image (PNG, JPG, GIF — max 10 MB)</label>
+          <input class="form-control" type="file" name="image" accept="image/*"
+                 onchange="previewImg(this)">
+          <div id="imgPreviewWrap" style="display:none;margin-top:1rem;">
+            <img id="imgPreview" style="max-height:180px;border-radius:12px;object-fit:cover;box-shadow:var(--flm-shadow);">
           </div>
-          <div class="mb-3">
-            <label class="form-label">Description</label>
-            <textarea class="form-control" name="description" rows="4"></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Image</label>
-            <input class="form-control" name="image" type="file" accept="image/*">
-          </div>
-          <button class="btn btn-primary" type="submit">Add Product</button>
-        </form>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-flm btn-flm-lg">
+        <i class="bi bi-plus-circle me-2"></i>Publish Product
+      </button>
+    </form>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="flm-card">
+      <div class="flm-card-header"><i class="bi bi-lightbulb me-2 text-flm"></i>Tips</div>
+      <div class="flm-card-body">
+        <ul class="fs-sm text-muted" style="padding-left:1.2rem;line-height:2;">
+          <li>Use square images (1:1 ratio) for best results.</li>
+          <li>Write detailed descriptions to improve conversions.</li>
+          <li>Set accurate stock levels to prevent overselling.</li>
+          <li>Slug is auto-generated from the product name.</li>
+        </ul>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+function previewImg(input) {
+  if (input.files && input.files[0]) {
+    const wrap = document.getElementById('imgPreviewWrap');
+    const img  = document.getElementById('imgPreview');
+    img.src = URL.createObjectURL(input.files[0]);
+    wrap.style.display = '';
+  }
+}
+</script>
 {% endblock %}
