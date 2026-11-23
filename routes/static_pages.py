@@ -76,8 +76,9 @@ def compare_add(product_id):
     if product_id not in basket:
         basket.append(product_id)
     session["compare_ids"] = basket[:3]
+    session.modified = True          # force Flask to persist the cookie
     next_url = request.form.get("next") or request.referrer or url_for("products.list_products")
-    flash("Added to comparison.", "info")
+    flash(f"Product added to compare. <a href='{url_for('static_pages.compare')}'>View comparison →</a>", "info")
     return redirect(next_url)
 
 
@@ -86,12 +87,14 @@ def compare_remove(product_id):
     basket = session.get("compare_ids", [])
     basket = [i for i in basket if i != product_id]
     session["compare_ids"] = basket
+    session.modified = True
     return redirect(url_for("static_pages.compare"))
 
 
 @static_pages_bp.route("/compare/clear", methods=["POST"])
 def compare_clear():
     session.pop("compare_ids", None)
+    session.modified = True
     return redirect(url_for("products.list_products"))
 
 

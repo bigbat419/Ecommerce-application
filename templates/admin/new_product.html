@@ -1,95 +1,106 @@
 {% extends 'admin/layout_admin.html' %}
 {% block title %}Add Product{% endblock %}
-{% block page_title %}Add New Product{% endblock %}
+{% block page_title %}Add Product{% endblock %}
 {% block content %}
-
-<div class="d-flex align-items-center gap-2 mb-4">
-  <a href="{{ url_for('admin.products') }}" class="btn-flm-outline btn-flm-sm">
-    <i class="bi bi-arrow-left me-1"></i>Back
-  </a>
-  <h2 class="mb-0" style="font-family:var(--flm-font-display);font-size:1.4rem;color:var(--flm-dark);">Add Product</h2>
-</div>
-
-<div class="row g-4">
-  <div class="col-lg-8">
-    <form method="post" enctype="multipart/form-data" action="{{ url_for('admin.add_product') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-      <div class="flm-card mb-4">
-        <div class="flm-card-header"><i class="bi bi-info-circle me-2 text-flm"></i>Basic Information</div>
-        <div class="flm-card-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="flm-label">Product Name <span class="text-flm">*</span></label>
-              <input class="flm-input" type="text" name="name" required placeholder="e.g. Classic Linen Shirt">
-            </div>
-            <div class="col-sm-6">
-              <label class="flm-label">Category</label>
-              <input class="flm-input" type="text" name="category" list="catList" placeholder="Men, Women, Accessories…">
-              <datalist id="catList">
-                {% for c in ['Men','Women','Kids','Accessories','Footwear'] %}
-                  <option value="{{ c }}">
-                {% endfor %}
-              </datalist>
-            </div>
-            <div class="col-sm-3">
-              <label class="flm-label">Price (₦) <span class="text-flm">*</span></label>
-              <input class="flm-input" type="number" name="price" step="0.01" min="0" required placeholder="5000">
-            </div>
-            <div class="col-sm-3">
-              <label class="flm-label">Stock Qty <span class="text-flm">*</span></label>
-              <input class="flm-input" type="number" name="stock" min="0" required placeholder="50">
-            </div>
-            <div class="col-12">
-              <label class="flm-label">Description</label>
-              <textarea class="flm-input" name="description" rows="4"
-                        placeholder="Describe the product — material, fit, care instructions…"></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="flm-card mb-4">
-        <div class="flm-card-header"><i class="bi bi-image me-2 text-flm"></i>Product Image</div>
-        <div class="flm-card-body">
-          <label class="flm-label">Upload Image (PNG, JPG, GIF — max 10 MB)</label>
-          <input class="form-control" type="file" name="image" accept="image/*"
-                 onchange="previewImg(this)">
-          <div id="imgPreviewWrap" style="display:none;margin-top:1rem;">
-            <img id="imgPreview" style="max-height:180px;border-radius:12px;object-fit:cover;box-shadow:var(--flm-shadow);">
-          </div>
-        </div>
-      </div>
-
-      <button type="submit" class="btn-flm btn-flm-lg">
-        <i class="bi bi-plus-circle me-2"></i>Publish Product
-      </button>
-    </form>
-  </div>
-
-  <div class="col-lg-4">
-    <div class="flm-card">
-      <div class="flm-card-header"><i class="bi bi-lightbulb me-2 text-flm"></i>Tips</div>
-      <div class="flm-card-body">
-        <ul class="fs-sm text-muted" style="padding-left:1.2rem;line-height:2;">
-          <li>Use square images (1:1 ratio) for best results.</li>
-          <li>Write detailed descriptions to improve conversions.</li>
-          <li>Set accurate stock levels to prevent overselling.</li>
-          <li>Slug is auto-generated from the product name.</li>
-        </ul>
-      </div>
+<form method="post" enctype="multipart/form-data" action="{{ url_for('admin.add_product') }}" id="productForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h2 class="mb-1" style="font-family:var(--flm-font-display);font-size:1.5rem;color:var(--flm-dark);">Add Product</h2>
+      <p class="text-muted fs-sm mb-0">Create a complete product listing.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('admin.products') }}" class="btn-flm-outline">Cancel</a>
+      <button type="submit" class="btn-flm"><i class="bi bi-check2 me-1"></i>Publish Product</button>
     </div>
   </div>
-</div>
 
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="flm-card mb-4">
+        <div class="flm-card-header"><span><i class="bi bi-info-circle me-2 text-flm"></i>General Information</span></div>
+        <div class="flm-card-body">
+          <div class="row g-3">
+            <div class="col-12"><label class="flm-label">Product Name *</label><input class="flm-input" type="text" name="name" required></div>
+            <div class="col-md-6"><label class="flm-label">Slug</label><input class="flm-input" type="text" name="slug" placeholder="Auto-generated from name"></div>
+            <div class="col-md-6"><label class="flm-label">SKU</label><input class="flm-input" type="text" name="sku" placeholder="e.g. FLM-001"></div>
+            <div class="col-md-6"><label class="flm-label">Barcode / UPC</label><input class="flm-input" type="text" name="barcode"></div>
+            <div class="col-md-6"><label class="flm-label">Tags</label><input class="flm-input" type="text" name="tags" placeholder="cotton, summer, sale"></div>
+            <div class="col-12"><label class="flm-label">Short Description</label><textarea class="flm-input" name="short_description" rows="2" maxlength="500"></textarea></div>
+            <div class="col-12"><label class="flm-label">Full Description</label><textarea class="flm-input" name="description" rows="7"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flm-card mb-4">
+        <div class="flm-card-header"><span><i class="bi bi-sliders me-2 text-flm"></i>Specifications</span><button type="button" class="btn-flm-outline btn-flm-sm" onclick="addSpecification()">Add Row</button></div>
+        <div class="flm-card-body">
+          <div id="specificationRows">
+            <div class="row g-2 mb-2 spec-row"><div class="col-sm-5"><input class="flm-input" name="spec_name" placeholder="Specification (e.g. Material)"></div><div class="col-sm-6"><input class="flm-input" name="spec_value" placeholder="Value (e.g. 100% Cotton)"></div><div class="col-sm-1 d-flex align-items-center"><button type="button" class="btn-flm-outline w-100" onclick="removeSpecification(this)" aria-label="Remove">&times;</button></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flm-card mb-4">
+        <div class="flm-card-header"><span><i class="bi bi-images me-2 text-flm"></i>Media</span></div>
+        <div class="flm-card-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="flm-label">Main Image *</label><input class="form-control" type="file" name="image" accept="image/*" onchange="previewMain(this)"><div id="mainPreviewWrap" class="mt-3" style="display:none;"><img id="mainPreview" style="width:160px;height:160px;object-fit:cover;border-radius:10px;"></div></div>
+            <div class="col-md-6"><label class="flm-label">Gallery Images</label><input class="form-control" type="file" name="gallery" accept="image/*" multiple><small class="text-muted">Select multiple JPG, PNG or GIF files.</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="col-lg-4">
+      <div class="flm-card mb-4">
+        <div class="flm-card-header"><i class="bi bi-eye me-2 text-flm"></i>Publishing</div>
+        <div class="flm-card-body">
+          <label class="flm-label">Status</label>
+          <select class="flm-input mb-3" name="status"><option value="active">Active</option><option value="draft">Draft</option><option value="archived">Archived</option></select>
+          <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="is_featured" id="featured"><label class="form-check-label fs-sm" for="featured">Featured product</label></div>
+          <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="taxable" id="taxable" checked><label class="form-check-label fs-sm" for="taxable">Taxable</label></div>
+        </div>
+      </div>
+
+      <div class="flm-card mb-4">
+        <div class="flm-card-header"><i class="bi bi-tags me-2 text-flm"></i>Organisation</div>
+        <div class="flm-card-body">
+          <label class="flm-label">Category</label><input class="flm-input mb-3" type="text" name="category" list="categoryList" placeholder="Select or enter category"><datalist id="categoryList">{% for c in categories %}<option value="{{ c.name }}">{% endfor %}</datalist>
+          <label class="flm-label">Brand</label><select class="flm-input" name="brand_id"><option value="">No brand</option>{% for b in brands %}<option value="{{ b.id }}">{{ b.name }}</option>{% endfor %}</select>
+        </div>
+      </div>
+
+      <div class="flm-card mb-4">
+        <div class="flm-card-header"><i class="bi bi-currency-dollar me-2 text-flm"></i>Pricing</div>
+        <div class="flm-card-body">
+          <label class="flm-label">Selling Price (₦) *</label><input class="flm-input mb-3" type="number" name="price" step="0.01" min="0" required>
+          <label class="flm-label">Compare-at Price (₦)</label><input class="flm-input mb-3" type="number" name="compare_at_price" step="0.01" min="0">
+          <label class="flm-label">Cost Price (₦)</label><input class="flm-input" type="number" name="cost_price" step="0.01" min="0">
+        </div>
+      </div>
+
+      <div class="flm-card mb-4">
+        <div class="flm-card-header"><i class="bi bi-box-seam me-2 text-flm"></i>Inventory & Shipping</div>
+        <div class="flm-card-body">
+          <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="manage_stock" id="manageStock" checked><label class="form-check-label fs-sm" for="manageStock">Track inventory</label></div>
+          <label class="flm-label">Stock Quantity *</label><input class="flm-input mb-3" type="number" name="stock" min="0" value="0" required>
+          <label class="flm-label">Low-stock Alert</label><input class="flm-input mb-3" type="number" name="low_stock_threshold" min="0" value="5">
+          <label class="flm-label">Weight (kg)</label><input class="flm-input mb-3" type="number" name="weight" step="0.01" min="0">
+          <div class="row g-2"><div class="col-4"><label class="flm-label">Length</label><input class="flm-input" type="number" name="length" step="0.01" min="0" placeholder="cm"></div><div class="col-4"><label class="flm-label">Width</label><input class="flm-input" type="number" name="width" step="0.01" min="0" placeholder="cm"></div><div class="col-4"><label class="flm-label">Height</label><input class="flm-input" type="number" name="height" step="0.01" min="0" placeholder="cm"></div></div>
+        </div>
+      </div>
+
+      <div class="flm-card">
+        <div class="flm-card-header"><i class="bi bi-search me-2 text-flm"></i>Search Engine</div>
+        <div class="flm-card-body"><label class="flm-label">Meta Title</label><input class="flm-input mb-3" type="text" name="meta_title" maxlength="255"><label class="flm-label">Meta Description</label><textarea class="flm-input" name="meta_description" rows="3" maxlength="500"></textarea></div>
+      </div>
+    </aside>
+  </div>
+</form>
 <script>
-function previewImg(input) {
-  if (input.files && input.files[0]) {
-    const wrap = document.getElementById('imgPreviewWrap');
-    const img  = document.getElementById('imgPreview');
-    img.src = URL.createObjectURL(input.files[0]);
-    wrap.style.display = '';
-  }
-}
+function addSpecification(){const r=document.createElement('div');r.className='row g-2 mb-2 spec-row';r.innerHTML='<div class="col-sm-5"><input class="flm-input" name="spec_name" placeholder="Specification"></div><div class="col-sm-6"><input class="flm-input" name="spec_value" placeholder="Value"></div><div class="col-sm-1 d-flex align-items-center"><button type="button" class="btn-flm-outline w-100" onclick="removeSpecification(this)">&times;</button></div>';document.getElementById('specificationRows').appendChild(r);}
+function removeSpecification(button){const rows=document.querySelectorAll('.spec-row');if(rows.length>1)button.closest('.spec-row').remove();}
+function previewMain(input){if(input.files&&input.files[0]){document.getElementById('mainPreview').src=URL.createObjectURL(input.files[0]);document.getElementById('mainPreviewWrap').style.display='';}}
 </script>
 {% endblock %}

@@ -125,6 +125,15 @@ def create_app():
                 )
             """)
             cur.execute("""
+                CREATE TABLE IF NOT EXISTS product_images (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    product_id INT NOT NULL,
+                    image VARCHAR(255) NOT NULL,
+                    sort_order INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS shipping_methods (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     name VARCHAR(120) NOT NULL,
@@ -196,7 +205,22 @@ def create_app():
             for alter in [
                 "ALTER TABLE products ADD COLUMN IF NOT EXISTS brand_id INT DEFAULT NULL",
                 "ALTER TABLE products ADD COLUMN IF NOT EXISTS compare_at_price DECIMAL(10,2) DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price DECIMAL(10,2) DEFAULT NULL",
                 "ALTER TABLE products ADD COLUMN IF NOT EXISTS sku VARCHAR(100) DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS barcode VARCHAR(100) DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS short_description TEXT DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS specifications TEXT DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS weight DECIMAL(8,2) DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS length DECIMAL(8,2) DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS width DECIMAL(8,2) DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS height DECIMAL(8,2) DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS low_stock_threshold INT DEFAULT 5",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS manage_stock TINYINT(1) DEFAULT 1",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active'",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS taxable TINYINT(1) DEFAULT 1",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS tags VARCHAR(255) DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS meta_title VARCHAR(255) DEFAULT NULL",
+                "ALTER TABLE products ADD COLUMN IF NOT EXISTS meta_description TEXT DEFAULT NULL",
                 "ALTER TABLE products ADD COLUMN IF NOT EXISTS is_featured TINYINT(1) DEFAULT 0",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS staff_role_id INT DEFAULT NULL",
                 "ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_method_id INT DEFAULT NULL",

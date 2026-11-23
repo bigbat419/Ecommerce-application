@@ -1,4 +1,5 @@
 import os
+import json
 import re
 from datetime import datetime, timedelta
 from functools import wraps
@@ -146,12 +147,32 @@ def products():
 @admin_required
 def add_product():
     if request.method == "POST":
-        name        = request.form.get("name", "").strip()
-        price       = request.form.get("price", "").strip()
-        stock       = request.form.get("stock", "").strip()
-        category    = request.form.get("category", "").strip()
+        name = request.form.get("name", "").strip()
+        slug = request.form.get("slug", "").strip()
+        price = request.form.get("price", "").strip()
+        compare_price = request.form.get("compare_at_price", "").strip()
+        cost_price = request.form.get("cost_price", "").strip()
+        stock = request.form.get("stock", "").strip()
+        low_stock_threshold = request.form.get("low_stock_threshold", "5").strip()
+        category = request.form.get("category", "").strip()
+        brand_id = request.form.get("brand_id", "").strip()
+        sku = request.form.get("sku", "").strip()
+        barcode = request.form.get("barcode", "").strip()
+        short_description = request.form.get("short_description", "").strip()
         description = request.form.get("description", "").strip()
-        image       = request.files.get("image")
+        weight = request.form.get("weight", "").strip()
+        length = request.form.get("length", "").strip()
+        width = request.form.get("width", "").strip()
+        height = request.form.get("height", "").strip()
+        tags = request.form.get("tags", "").strip()
+        status = request.form.get("status", "active").strip()
+        meta_title = request.form.get("meta_title", "").strip()
+        meta_description = request.form.get("meta_description", "").strip()
+        manage_stock = 1 if request.form.get("manage_stock") else 0
+        is_featured = 1 if request.form.get("is_featured") else 0
+        taxable = 1 if request.form.get("taxable") else 0
+        image = request.files.get("image")
+        gallery_images = request.files.getlist("gallery")
 
         if not name or not price or not stock:
             flash("Name, price, and stock are required.", "danger")
@@ -160,8 +181,15 @@ def add_product():
         try:
             price = float(price)
             stock = int(stock)
-        except ValueError:
-            flash("Price must be a number and stock must be an integer.", "danger")
+            low_stock_threshold = int(low_stock_threshold or 5)
+            compare_price = float(compare_price) if compare_price else None
+            cost_price = float(cost_price) if cost_price else None
+            weight = float(weight) if weight else None
+            length = float(length) if length else None
+            width = float(width) if width else None
+            height = float(height) if height else None
+        except (TypeError, ValueError):
+            flash("Price, stock, and numeric product fields must be valid numbers.", "danger")
             return redirect(url_for("admin.add_product"))
 
         image_path = None
@@ -172,21 +200,55 @@ def add_product():
             image.save(os.path.join(upload_folder, filename))
             image_path = f"uploads/{filename}"
 
-        slug = slugify(name)
+        slug = slugify(slug or name)
+        spec_names = request.form.getlist("spec_name")
+        spec_values = request.form.getlist("spec_value")
+        specifications = json.dumps([
+            {"name": n.strip(), "value": v.strip()}
+            for n, v in zip(spec_names, spec_values)
+            if n.strip() and v.strip()
+        ])
         cur = mysql.connection.cursor()
         cur.execute("SELECT COUNT(*) as cnt FROM products WHERE slug=%s", (slug,))
         if cur.fetchone()['cnt'] > 0:
             slug = f"{slug}-{int(__import__('time').time())}"
         cur.execute(
-            "INSERT INTO products (name, price, stock, category, description, image, slug) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-            (name, price, stock, category, description, image_path, slug),
+            """INSERT INTO products
+               (name, slug, price, compare_at_price, cost_price, stock, low_stock_threshold,
+                category, brand_id, sku, barcode, short_description, description, specifications,
+                weight, length, width, height, tags, status, manage_stock, taxable, is_featured,
+                meta_title, meta_description, image)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            (name, slug, price, compare_price, cost_price, stock, low_stock_threshold,
+             category, int(brand_id) if brand_id.isdigit() else None, sku, barcode,
+             short_description, description, specifications, weight, length, width, height,
+             tags, status, manage_stock, taxable, is_featured, meta_title, meta_description,
+             image_path),
         )
+        cur.execute("SELECT LAST_INSERT_ID() AS id")
+        product_id = cur.fetchone()["id"]
+        for index, gallery_image in enumerate(gallery_images):
+            if gallery_image and gallery_image.filename and allowed_file(gallery_image.filename):
+                filename = secure_filename(gallery_image.filename)
+                gallery_folder = os.path.join(current_app.root_path, "static", "uploads", "products")
+                os.makedirs(gallery_folder, exist_ok=True)
+                gallery_image.save(os.path.join(gallery_folder, filename))
+                cur.execute(
+                    "INSERT INTO product_images (product_id, image, sort_order) VALUES (%s,%s,%s)",
+                    (product_id, f"uploads/products/{filename}", index),
+                )
         mysql.connection.commit()
         cur.close()
         flash("Product added successfully.", "success")
         return redirect(url_for("admin.products"))
 
-    return render_template("admin/new_product.html")
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, name FROM brands WHERE active=1 ORDER BY name")
+    brands = cur.fetchall()
+    cur.execute("SELECT id, name FROM categories WHERE active=1 ORDER BY sort_order, name")
+    categories = cur.fetchall()
+    cur.close()
+    return render_template("admin/new_product.html", brands=brands, categories=categories)
 
 
 @admin_bp.route("/products/edit/<int:product_id>", methods=["GET", "POST"])
@@ -195,18 +257,45 @@ def add_product():
 def edit_product(product_id):
     cur = mysql.connection.cursor()
     if request.method == "POST":
-        name        = request.form.get("name", "").strip()
-        price       = request.form.get("price", "").strip()
-        stock       = request.form.get("stock", "").strip()
-        category    = request.form.get("category", "").strip()
+        name = request.form.get("name", "").strip()
+        slug = request.form.get("slug", "").strip()
+        price = request.form.get("price", "").strip()
+        compare_price = request.form.get("compare_at_price", "").strip()
+        cost_price = request.form.get("cost_price", "").strip()
+        stock = request.form.get("stock", "").strip()
+        low_stock_threshold = request.form.get("low_stock_threshold", "5").strip()
+        category = request.form.get("category", "").strip()
+        brand_id = request.form.get("brand_id", "").strip()
+        sku = request.form.get("sku", "").strip()
+        barcode = request.form.get("barcode", "").strip()
+        short_description = request.form.get("short_description", "").strip()
         description = request.form.get("description", "").strip()
-        image       = request.files.get("image")
+        weight = request.form.get("weight", "").strip()
+        length = request.form.get("length", "").strip()
+        width = request.form.get("width", "").strip()
+        height = request.form.get("height", "").strip()
+        tags = request.form.get("tags", "").strip()
+        status = request.form.get("status", "active").strip()
+        meta_title = request.form.get("meta_title", "").strip()
+        meta_description = request.form.get("meta_description", "").strip()
+        manage_stock = 1 if request.form.get("manage_stock") else 0
+        is_featured = 1 if request.form.get("is_featured") else 0
+        taxable = 1 if request.form.get("taxable") else 0
+        image = request.files.get("image")
+        gallery_images = request.files.getlist("gallery")
 
         try:
             price = float(price)
             stock = int(stock)
-        except ValueError:
-            flash("Invalid price or stock.", "danger")
+            low_stock_threshold = int(low_stock_threshold or 5)
+            compare_price = float(compare_price) if compare_price else None
+            cost_price = float(cost_price) if cost_price else None
+            weight = float(weight) if weight else None
+            length = float(length) if length else None
+            width = float(width) if width else None
+            height = float(height) if height else None
+        except (TypeError, ValueError):
+            flash("Invalid price, stock, or numeric product field.", "danger")
             return redirect(url_for("admin.edit_product", product_id=product_id))
 
         image_path = None
@@ -217,16 +306,50 @@ def edit_product(product_id):
             image.save(os.path.join(upload_folder, filename))
             image_path = f"uploads/{filename}"
 
+        spec_names = request.form.getlist("spec_name")
+        spec_values = request.form.getlist("spec_value")
+        specifications = json.dumps([
+            {"name": n.strip(), "value": v.strip()}
+            for n, v in zip(spec_names, spec_values)
+            if n.strip() and v.strip()
+        ])
+        values = (
+            name, slugify(slug or name), price, compare_price, cost_price, stock,
+            low_stock_threshold, category, int(brand_id) if brand_id.isdigit() else None,
+            sku, barcode, short_description, description, specifications, weight,
+            length, width, height, tags, status, manage_stock, taxable, is_featured,
+            meta_title, meta_description,
+        )
+        set_clause = """name=%s, slug=%s, price=%s, compare_at_price=%s, cost_price=%s,
+                        stock=%s, low_stock_threshold=%s, category=%s, brand_id=%s,
+                        sku=%s, barcode=%s, short_description=%s, description=%s,
+                        specifications=%s, weight=%s, length=%s, width=%s, height=%s,
+                        tags=%s, status=%s, manage_stock=%s, taxable=%s, is_featured=%s,
+                        meta_title=%s, meta_description=%s"""
         if image_path:
             cur.execute(
-                "UPDATE products SET name=%s, price=%s, stock=%s, category=%s, description=%s, image=%s WHERE id=%s",
-                (name, price, stock, category, description, image_path, product_id),
+                f"UPDATE products SET {set_clause}, image=%s WHERE id=%s",
+                values + (image_path, product_id),
             )
         else:
             cur.execute(
-                "UPDATE products SET name=%s, price=%s, stock=%s, category=%s, description=%s WHERE id=%s",
-                (name, price, stock, category, description, product_id),
+                f"UPDATE products SET {set_clause} WHERE id=%s",
+                values + (product_id,),
             )
+
+        if gallery_images:
+            cur.execute("SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM product_images WHERE product_id=%s", (product_id,))
+            next_order = cur.fetchone()["max_order"] + 1
+            for index, gallery_image in enumerate(gallery_images):
+                if gallery_image and gallery_image.filename and allowed_file(gallery_image.filename):
+                    filename = secure_filename(gallery_image.filename)
+                    gallery_folder = os.path.join(current_app.root_path, "static", "uploads", "products")
+                    os.makedirs(gallery_folder, exist_ok=True)
+                    gallery_image.save(os.path.join(gallery_folder, filename))
+                    cur.execute(
+                        "INSERT INTO product_images (product_id, image, sort_order) VALUES (%s,%s,%s)",
+                        (product_id, f"uploads/products/{filename}", next_order + index),
+                    )
         mysql.connection.commit()
         cur.close()
         flash("Product updated.", "success")
@@ -238,7 +361,31 @@ def edit_product(product_id):
     if not product:
         flash("Product not found.", "warning")
         return redirect(url_for("admin.products"))
-    return render_template("admin/edit_product.html", product=product)
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, name FROM brands WHERE active=1 ORDER BY name")
+    brands = cur.fetchall()
+    cur.execute("SELECT id, name FROM categories WHERE active=1 ORDER BY sort_order, name")
+    categories = cur.fetchall()
+    cur.execute(
+        "SELECT id, image, sort_order FROM product_images WHERE product_id=%s ORDER BY sort_order, id",
+        (product_id,),
+    )
+    gallery = cur.fetchall()
+    cur.close()
+    specifications = []
+    if product.get("specifications"):
+        try:
+            specifications = json.loads(product["specifications"])
+        except (TypeError, json.JSONDecodeError):
+            specifications = []
+    return render_template(
+        "admin/edit_product.html",
+        product=product,
+        brands=brands,
+        categories=categories,
+        gallery=gallery,
+        specifications=specifications,
+    )
 
 
 @admin_bp.route("/products/delete/<int:product_id>", methods=["POST"])
@@ -250,6 +397,27 @@ def delete_product(product_id):
     mysql.connection.commit()
     cur.close()
     flash("Product deleted.", "info")
+    return redirect(url_for("admin.products"))
+
+
+@admin_bp.route("/products/gallery/delete/<int:image_id>", methods=["POST"])
+@login_required
+@admin_required
+def delete_product_image(image_id):
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT product_id, image FROM product_images WHERE id=%s", (image_id,))
+    row = cur.fetchone()
+    if row:
+        cur.execute("DELETE FROM product_images WHERE id=%s", (image_id,))
+        mysql.connection.commit()
+        if row.get("image"):
+            image_file = os.path.join(current_app.root_path, "static", row["image"])
+            if os.path.isfile(image_file):
+                os.remove(image_file)
+        flash("Gallery image removed.", "info")
+    cur.close()
+    if row:
+        return redirect(url_for("admin.edit_product", product_id=row["product_id"]))
     return redirect(url_for("admin.products"))
 
 

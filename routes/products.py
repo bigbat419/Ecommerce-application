@@ -106,14 +106,31 @@ def list_products():
 # ─────────────────────────────────────────────
 @products_bp.route('/<int:product_id>')
 def product_detail(product_id):
+    import json
     cur = mysql.connection.cursor()
 
-    cur.execute('SELECT * FROM products WHERE id = %s', (product_id,))
+    cur.execute(
+        """SELECT p.*, b.name AS brand_name
+           FROM products p LEFT JOIN brands b ON b.id=p.brand_id
+           WHERE p.id=%s""",
+        (product_id,),
+    )
     product = cur.fetchone()
     if not product:
         flash('Product not found.', 'warning')
         cur.close()
         return redirect(url_for('products.list_products'))
+
+    try:
+        specifications = json.loads(product.get('specifications') or '[]')
+    except (TypeError, json.JSONDecodeError):
+        specifications = []
+
+    cur.execute(
+        "SELECT id, image, sort_order FROM product_images WHERE product_id=%s ORDER BY sort_order, id",
+        (product_id,),
+    )
+    gallery = cur.fetchall()
 
     # Reviews with reviewer name
     cur.execute(
@@ -154,4 +171,6 @@ def product_detail(product_id):
         reviews=reviews,
         related=related,
         in_wishlist=in_wishlist,
+        specifications=specifications,
+        gallery=gallery,
     )

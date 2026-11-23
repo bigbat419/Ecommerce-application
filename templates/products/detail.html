@@ -26,6 +26,20 @@
           <div style="font-size:5rem;color:var(--grey-300);"><i class="bi bi-image"></i></div>
         {% endif %}
       </div>
+      {% if gallery %}
+      <div class="d-flex gap-2 mt-2 flex-wrap">
+        {% if product.image %}
+        <button type="button" class="border-0 bg-transparent p-0" onclick="document.getElementById('mainImg').src=this.querySelector('img').src">
+          <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid var(--p);">
+        </button>
+        {% endif %}
+        {% for g in gallery %}
+        <button type="button" class="border-0 bg-transparent p-0" onclick="document.getElementById('mainImg').src=this.querySelector('img').src">
+          <img src="{{ url_for('static', filename=g.image) }}" alt="{{ product.name }} image {{ loop.index }}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--grey-200);">
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
       {# share row #}
       <div class="d-flex align-items-center gap-3 mt-3 fs-xs text-muted">
         <span class="fw-600">Share:</span>
@@ -74,6 +88,9 @@
       {# Price #}
       <div class="d-flex align-items-baseline gap-2 mb-1">
         <span class="detail-price">₦{{ "%.0f"|format(product.price|float) }}</span>
+        {% if product.compare_at_price and product.compare_at_price|float > product.price|float %}
+        <span class="text-muted text-decoration-line-through fs-sm">₦{{ "%.0f"|format(product.compare_at_price|float) }}</span>
+        {% endif %}
         {% if product.stock <= 5 and product.stock > 0 %}
           <span class="detail-badge">Only {{ product.stock }} left!</span>
         {% endif %}
@@ -159,9 +176,18 @@
       <table class="table table-bordered table-sm" style="max-width:480px;font-size:.85rem;">
         <tbody>
           <tr><th style="width:35%">Category</th><td>{{ product.category or '—' }}</td></tr>
+          {% if product.brand_name %}<tr><th>Brand</th><td>{{ product.brand_name }}</td></tr>{% endif %}
           <tr><th>Price</th><td>₦{{ "%.2f"|format(product.price|float) }}</td></tr>
           <tr><th>Stock</th><td>{{ product.stock }} units</td></tr>
-          <tr><th>SKU</th><td class="font-monospace">FLM-{{ '%05d'|format(product.id) }}</td></tr>
+          <tr><th>SKU</th><td class="font-monospace">{{ product.sku or 'FLM-' ~ '%05d'|format(product.id) }}</td></tr>
+          {% if product.barcode %}<tr><th>Barcode</th><td class="font-monospace">{{ product.barcode }}</td></tr>{% endif %}
+          {% if product.weight %}<tr><th>Weight</th><td>{{ product.weight }} kg</td></tr>{% endif %}
+          {% if product.length or product.width or product.height %}
+          <tr><th>Dimensions</th><td>{{ product.length or '—' }} × {{ product.width or '—' }} × {{ product.height or '—' }} cm</td></tr>
+          {% endif %}
+          {% for spec in specifications %}
+          <tr><th>{{ spec.name }}</th><td>{{ spec.value }}</td></tr>
+          {% endfor %}
         </tbody>
       </table>
     </div>
